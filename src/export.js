@@ -1,10 +1,95 @@
-// ── PDF EXPORT ────────────────────────────────────────────────────────────────
+// ── PDF EXPORT + DATA BACKUP ──────────────────────────────────────────────────
 // Uses window.print() + @media print CSS to hide the app shell and show a
 // dedicated print frame. The OS "Save as PDF" dialog handles the rest.
-import { state } from './state.js'
+import { invoke } from '@tauri-apps/api/core'
+import { isTauri } from './platform.js'
+import { state, save } from './state.js'
 import { getBh } from './behavioral/shared.js'
 import { t } from './i18n.js'
 import { esc } from './util.js'
+
+// ── Data backup ───────────────────────────────────────────────────────────────
+
+const BACKUP_VERSION = 1
+
+function _buildPayload() {
+  return JSON.stringify({
+    l5backup: true,
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    lang: state.lang,
+    data: state.S,
+  }, null, 2)
+}
+
+/** Download a full JSON backup of all content (no API keys). */
+export async function exportBackup() {
+  const json     = _buildPayload()
+  const fileName = `l5-backup-${new Date().toISOString().slice(0, 10)}.json`
+
+  if (isTauri) {
+    // Use native OS Save dialog via Rust command — WebView2 ignores <a download>
+    await invoke('save_backup_file', { content: json, fileName })
+    return
+  }
+
+  // Browser fallback: data URL download
+  const a    = document.createElement('a')
+  a.href     = 'data:application/json;charset=utf-8,' + encodeURIComponent(json)
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}
+
+function _restoreFromJson(text) {
+  const payload = JSON.parse(text)
+  if (!payload?.l5backup || !payload?.data) {
+    alert(t('文件格式不正确，请选择由本应用导出的备份文件。', 'Invalid backup file. Please select a file exported by this app.'))
+    return
+  }
+  const chCount = payload.data?.chapters?.length ?? 0
+  const ok = confirm(
+    t(
+      `导入备份将覆盖当前所有数据（共 ${chCount} 个章节）。确认导入？`,
+      `This will overwrite all current data (${chCount} chapters). Proceed?`
+    )
+  )
+  if (!ok) return
+  localStorage.setItem('l5v3', JSON.stringify(payload.data))
+  if (payload.lang) localStorage.setItem('l5lang', payload.lang)
+  window.location.reload()
+}
+
+/** Open a file-picker, validate, then restore state and reload. */
+export async function importBackup() {
+  if (isTauri) {
+    // Use native OS Open dialog via Rust command
+    try {
+      const content = await invoke('pick_backup_file')
+      if (!content) return // user cancelled
+      _restoreFromJson(content)
+    } catch (err) {
+      alert(t('导入失败：', 'Import failed: ') + (err?.message || err))
+    }
+    return
+  }
+
+  // Browser fallback: file input
+  const input    = document.createElement('input')
+  input.type     = 'file'
+  input.accept   = '.json'
+  input.onchange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      _restoreFromJson(await file.text())
+    } catch (err) {
+      alert(t('导入失败：', 'Import failed: ') + (err?.message || err))
+    }
+  }
+  input.click()
+}
 
 const CATEGORY_ORDER = ['Ambiguity', 'Leadership', 'Technical Depth', 'Conflict', 'Failure', 'Execution', 'Cross-functional', 'Mentorship']
 
@@ -138,6 +223,11 @@ export function exportBqAnswer(bqId) {
   if (!bq) return
   const story = bq.linkedStoryId ? bh.stories.find(s => s.id === bq.linkedStoryId) : null
   _printDoc(bq.category + ' — BQ', _bqHtml(bq, story))
+}
+
+export function exportAggregatorPdf(title, markdownHtml) {
+  _printDoc(title || t('知识聚合结果', 'Knowledge Aggregator Result'),
+    '<div class="print-aggr-body">' + markdownHtml + '</div>')
 }
 
 export function exportAllBqAnswers() {

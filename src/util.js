@@ -8,8 +8,11 @@ export function esc(s) {
 
 export function md2h(md) {
   if (!md) return ''
+  // Normalise Windows line-endings so all regexes only need to handle \n
+  md = md.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   const codeBlocks = []
-  let s = md.replace(/```([\w]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+  // Allow optional trailing spaces after language tag (e.g. ```java  \n)
+  let s = md.replace(/```([\w-]*) *\n([\s\S]*?)```/g, (_, lang, code) => {
     const idx = codeBlocks.length
     const safe = code.trimEnd()
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

@@ -36,7 +36,7 @@ function renderFcSetup(c) {
         <button class="btn-primary" onclick="generateFlashcards()" style="margin-top:8px">
           ✨ ${t('生成 Flashcards', 'Generate Flashcards')}
         </button>
-        ${c.analysis ? '' : `<p class="fc-warn">${t('请先在知识框架标签页生成学习内容。', 'Generate the knowledge framework first.')}</p>`}
+        ${(c.analysis || c.rawContent) ? '' : `<p class="fc-warn">${t('请先在知识框架标签页生成学习内容。', 'Generate the knowledge framework first.')}</p>`}
       </div>
     </div>`
 }
@@ -45,15 +45,17 @@ function renderFcSetup(c) {
 
 export async function generateFlashcards() {
   const c = gch(); if (!c) return
-  if (!c.analysis) { alert(t('请先生成知识框架。', 'Please generate the knowledge framework first.')); return }
+  if (!c.analysis && !c.rawContent) { alert(t('请先生成知识框架。', 'Please generate the knowledge framework first.')); return }
   showLoading(t('正在生成 Flashcards…', 'Generating flashcards…'), `Claude ${t('正在为', 'is creating cards for')} 「${c.name}」`)
   try {
-    const digest = c.analysis.slice(0, 3000)
+    const digest = c.analysis
+      ? c.analysis.slice(0, 3000)
+      : (c.rawContent || '').slice(0, 5000)
     const sys = `You are creating L5 SDE interview prep flashcards. Generate exactly 12 flashcards.
 Mix: key term definitions (4), architectural/design concepts (4), and tradeoff or "why" questions (4).
 Return ONLY a valid JSON array — no markdown, no preamble:
 [{"front":"concise question or term (≤15 words)","back":"clear answer, 2-4 sentences with specifics"}]`
-    const raw = await claude(sys, `Chapter: ${c.name}\n\nContent:\n${digest}`, 3000)
+    const raw = await claude(sys, `Chapter: ${c.name}\n\nContent:\n${digest}`, 3000, 'fast')
     let s = raw.trim().replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim()
     const start = s.indexOf('['); if (start > 0) s = s.slice(start)
     const cards = JSON.parse(s)

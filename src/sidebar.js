@@ -2,6 +2,9 @@
 import { state, save } from './state.js'
 import { t } from './i18n.js'
 import { esc } from './util.js'
+import { getUser } from './auth.js'
+import { getSyncStatus } from './sync.js'
+import { supabaseConfigured } from './supabase.js'
 
 export function renderSB() {
   let h = `<div class="dir-hd"><span>${t('目录', 'Folders')}</span><button onclick="addFolder()" title="${t('新建目录', 'New folder')}">＋</button></div>`
@@ -43,13 +46,68 @@ export function renderSB() {
       <span class="ch-dot" style="background:var(--green)"></span>
       <span class="ch-label">🎯 ${t('BQ 备考', 'BQ Prep')}</span>
     </div>
+    <div class="ch-item${state.activeCid === '__aggregator__' ? ' active' : ''}" data-cid="__aggregator__" onclick="selAggregator()">
+      <span class="ch-dot" style="background:#a855f7"></span>
+      <span class="ch-label">🖼️ ${t('知识聚合器', 'Knowledge Aggregator')}</span>
+    </div>
+    <div class="dir-hd" style="margin-top:8px"><span>${t('练习区', 'Practice Area')}</span></div>
+    <div class="ch-item${state.activeCid === '__ood__' ? ' active' : ''}" data-cid="__ood__" onclick="selOod()">
+      <span class="ch-dot" style="background:#22d3ee"></span>
+      <span class="ch-label">🏗️ ${t('OOD 设计', 'OOD Design')}</span>
+    </div>
+    <div class="ch-item ch-item-soon" data-cid="__sysdesign__">
+      <span class="ch-dot" style="background:#444"></span>
+      <span class="ch-label">🖥️ ${t('系统设计', 'System Design')} <span class="ch-soon-badge">${t('即将推出', 'Soon')}</span></span>
+    </div>
     <div class="dir-hd" style="margin-top:8px"><span>${t('总览', 'Overview')}</span></div>
     <div class="ch-item${state.activeCid === '__dashboard__' ? ' active' : ''}" data-cid="__dashboard__" onclick="selDashboard()">
       <span class="ch-dot" style="background:var(--yellow)"></span>
       <span class="ch-label">${t('📊 备考进度', '📊 Progress Dashboard')}</span>
     </div>`
   document.getElementById('sbBody').innerHTML = h
+  _renderSBFooter()
   initSBDrag()
+}
+
+function _renderSBFooter() {
+  const footer = document.getElementById('sb-footer')
+  if (!footer) return
+  const user = getUser()
+  const { status } = getSyncStatus()
+
+  if (!supabaseConfigured) {
+    footer.innerHTML = ''
+    return
+  }
+
+  if (user) {
+    footer.innerHTML = `
+      <div class="sb-auth-row">
+        <span class="sb-auth-email" title="${esc(user.email)}">${esc(user.email)}</span>
+        <span id="sync-badge" class="sync-badge" title=""></span>
+      </div>`
+    // Re-apply current status icon after re-render
+    const badge = document.getElementById('sync-badge')
+    if (badge) {
+      const MAP = {
+        idle:'', syncing:'⟳', synced:'✓', pending:'●', offline:'☁', error:'✕'
+      }
+      const COLORS = {
+        idle:'', syncing:'var(--accent)', synced:'var(--green)',
+        pending:'var(--yellow)', offline:'var(--muted2)', error:'var(--red)'
+      }
+      badge.textContent = MAP[status] || ''
+      badge.style.color = COLORS[status] || ''
+      badge.classList.toggle('sync-spinning', status === 'syncing')
+    }
+  } else {
+    footer.innerHTML = `
+      <div class="sb-signin-banner" onclick="showSettings()">
+        <span class="sb-signin-icon">☁</span>
+        <span class="sb-signin-text">${t('登录以同步数据', 'Sign in to sync data')}</span>
+        <span class="sb-signin-arrow">→</span>
+      </div>`
+  }
 }
 
 export function chItem(c, orphan = false) {
@@ -80,7 +138,7 @@ export function initSBDrag() {
     const item = e.target.closest('.ch-item')
     if (!item) return
     const cid = item.dataset.cid
-    if (!cid || cid === '__behavioral__' || cid === '__resume__' || cid === '__bqprep__' || cid === '__jobprep__' || cid === '__dashboard__') return
+    if (!cid || cid === '__behavioral__' || cid === '__resume__' || cid === '__bqprep__' || cid === '__jobprep__' || cid === '__dashboard__' || cid === '__aggregator__' || cid === '__ood__' || cid === '__sysdesign__') return
     state.dragState = { cid, startX: e.clientX, startY: e.clientY, active: false, ghost: null, item }
     document.addEventListener('pointermove', sbDragMove, { passive: false })
     document.addEventListener('pointerup', sbDragEnd)
@@ -137,7 +195,7 @@ export function sbDragEnd() {
   document.querySelectorAll('.drop-above,.drop-below,.drop-target').forEach(el =>
     el.classList.remove('drop-above', 'drop-below', 'drop-target'))
   if (!ds.active) return
-  if (targetId && targetId !== ds.cid && !['__behavioral__', '__resume__', '__bqprep__', '__jobprep__', '__dashboard__'].includes(targetId)) {
+  if (targetId && targetId !== ds.cid && !['__behavioral__', '__resume__', '__bqprep__', '__jobprep__', '__dashboard__', '__aggregator__', '__ood__', '__sysdesign__'].includes(targetId)) {
     const srcIdx = state.S.chapters.findIndex(c => c.id === ds.cid)
     const [src] = state.S.chapters.splice(srcIdx, 1)
     const tgtIdx = state.S.chapters.findIndex(c => c.id === targetId)

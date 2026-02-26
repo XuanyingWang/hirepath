@@ -69,7 +69,9 @@ async function genQuiz(c, mode) {
   const mDesc = mode === 'concept'
     ? '概念理解题（定义、原理、权衡对比、方案比较）'
     : '场景实战题（系统设计决策、故障排查、性能优化、容量规划）'
-  const digest = c.analysis.slice(0, 3000)
+  const digest = c.analysis
+    ? c.analysis.slice(0, 3000)
+    : (c.rawContent || '').slice(0, 5000)
   const sys = '只返回一个合法的 JSON 数组，不要包含任何 markdown 标记、解释或文字说明代码块。直接输出 [ 开头的 JSON。'
 
   const makePrompt = (batch, start, angleHint) =>
@@ -89,10 +91,17 @@ ${digest}
 返回格式（仅 JSON 数组，无其他内容）：
 [{"q":"题目","options":["A","B","C","D"],"correct":0,"hint":"提示","explanation":"解析"}]`
 
-  const [raw1, raw2] = await Promise.all([
-    claudeQuiz(sys, makePrompt(5, 0, '\n侧重：核心概念、基本原理、定义对比。')),
-    claudeQuiz(sys, makePrompt(5, 5, '\n侧重：边界情况、权衡取舍、综合应用和实战场景，与第1-5题知识点不重复。'))
-  ])
+  // Claude supports parallel calls; Gemini/OpenAI have strict RPM limits so run sequentially.
+  let raw1, raw2
+  if (state.provider === 'claude') {
+    ;[raw1, raw2] = await Promise.all([
+      claudeQuiz(sys, makePrompt(5, 0, '\n侧重：核心概念、基本原理、定义对比。')),
+      claudeQuiz(sys, makePrompt(5, 5, '\n侧重：边界情况、权衡取舍、综合应用和实战场景，与第1-5题知识点不重复。'))
+    ])
+  } else {
+    raw1 = await claudeQuiz(sys, makePrompt(5, 0, '\n侧重：核心概念、基本原理、定义对比。'))
+    raw2 = await claudeQuiz(sys, makePrompt(5, 5, '\n侧重：边界情况、权衡取舍、综合应用和实战场景，与第1-5题知识点不重复。'))
+  }
 
   const qs = [...parseQuizJSON(raw1), ...parseQuizJSON(raw2)]
   if (qs.length === 0) throw new Error('题目生成失败，请重试')

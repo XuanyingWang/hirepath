@@ -44,6 +44,7 @@ function _initS() {
     if (!s.behavioral.bqStore) s.behavioral.bqStore = _defaultBqStore()
   }
   if (!s.jobPrep) s.jobPrep = { companies: [] }
+  if (!s.aggregator) s.aggregator = { title: '', result: '', updatedAt: null }
   return s
 }
 
@@ -65,6 +66,9 @@ export const state = {
   editingStoryId: null,
   jobPrepView: null,         // null = home | { type: 'company', name } | { type: 'posting', id }
   apiKey: '',
+  geminiKey: '',
+  openaiKey: '',
+  provider: localStorage.getItem('l5provider') || 'claude', // 'claude' | 'gemini' | 'openai'
   lang: localStorage.getItem('l5lang') || 'zh',
   // Flashcard session state (ephemeral — not persisted)
   fcSession: [],       // card objects for current pass
@@ -73,7 +77,14 @@ export const state = {
   fcSessionCid: null, // which chapter this session belongs to
 }
 
-export function save() { localStorage.setItem('l5v3', JSON.stringify(state.S)) }
+let _syncCb = null
+/** Called once by main.js after sync.js is initialised. Avoids circular imports. */
+export function setSyncCallback(fn) { _syncCb = fn }
+
+export function save() {
+  localStorage.setItem('l5v3', JSON.stringify(state.S))
+  if (_syncCb) _syncCb()
+}
 export function gch() { return state.S.chapters.find(c => c.id === state.activeCid) }
 export function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }
 
