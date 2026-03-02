@@ -22,6 +22,7 @@ import { renderBqPrep, openBqDetail, closeBqDetail, addBq, saveBq, deleteBq, lin
 import { renderJobPrep, openCompanyView, closeCompanyView, openPostingDetail, addJobPosting, submitJobPosting, deletePosting, connectResume, disconnectResume, showResumePicker, matchBullets } from './jobprep.js'
 import { renderAggregator, aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf } from './aggregator.js'
 import { renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze } from './ood.js'
+import { renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate } from './patterns.js'
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 
@@ -83,6 +84,13 @@ function selOod() {
   renderOod()
 }
 
+function selPatterns() {
+  state.activeCid = '__patterns__'
+  renderSB()
+  document.getElementById('topbar').style.display = 'none'
+  renderPatterns()
+}
+
 
 function setLang(l) {
   state.lang = l; localStorage.setItem('l5lang', l)
@@ -111,6 +119,9 @@ function renderCurrent() {
   } else if (state.activeCid === '__ood__') {
     document.getElementById('topbar').style.display = 'none'
     renderOod()
+  } else if (state.activeCid === '__patterns__') {
+    document.getElementById('topbar').style.display = 'none'
+    renderPatterns()
   } else if (state.activeCid && gch()) {
     document.getElementById('topbar').style.display = 'flex'
     document.getElementById('topbarTitle').textContent = gch().name
@@ -242,6 +253,8 @@ Object.assign(window, {
   aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf,
   // OOD Practice
   selOod, renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze,
+  // LeetCode Patterns
+  selPatterns, renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate,
   // Job Prep
   selJobPrep, renderJobPrep,
   openCompanyView, closeCompanyView, openPostingDetail,

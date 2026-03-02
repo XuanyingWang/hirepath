@@ -45,6 +45,7 @@ function _initS() {
   }
   if (!s.jobPrep) s.jobPrep = { companies: [] }
   if (!s.aggregator) s.aggregator = { title: '', result: '', updatedAt: null }
+  if (!s.patterns) s.patterns = []
   return s
 }
 

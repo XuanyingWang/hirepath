@@ -808,3 +808,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .print-aggr-body li{margin:2px 0}
 .print-aggr-body blockquote{border-left:3px solid #ccc;margin:8px 0;padding:4px 10px;color:#666}
 .print-aggr-body p{margin:0 0 8px;line-height:1.6}
+
+/* ── LEETCODE PATTERNS ─────────────────────────────────────────────────────── */
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:20px}
+.pattern-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.pattern-card:hover{border-color:var(--accent);box-shadow:var(--sh-md);transform:translateY(-1px)}
+.pattern-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pattern-card-name{font-size:14px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pattern-card-badge{font-size:10px;color:var(--green);background:var(--green-l);padding:2px 7px;border-radius:10px;flex-shrink:0;font-weight:600}
+.pattern-card-desc{font-size:12.5px;color:var(--text2);margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55}
+.pattern-card-footer{display:flex;align-items:center;justify-content:space-between}
+.pattern-card-date{font-size:11px;color:var(--muted)}
+.pattern-detail-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.pattern-field{margin-bottom:14px}
+.pattern-label{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.pattern-output{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;min-height:220px}
+.pattern-output-placeholder{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 20px;gap:8px}
+.pat-streaming{text-align:center;padding:56px 20px;color:var(--muted);font-size:13px}
+.pattern-lc-link{color:var(--accent);text-decoration:none;font-weight:500}
+.pattern-lc-link:hover{text-decoration:underline}
