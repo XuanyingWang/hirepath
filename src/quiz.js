@@ -128,7 +128,7 @@ function parseQuizJSON(raw) {
 export function renderQ() {
   const { questions, current, mode } = state.quizState
   const q = questions[current]
-  const pct = (current / questions.length) * 100
+  const pct = ((current + 1) / questions.length) * 100
   const L = ['A', 'B', 'C', 'D']
   document.getElementById('mainContent').innerHTML = `
     <div class="quiz-active">
@@ -213,9 +213,11 @@ export function renderResults() {
         <div class="res-list">
           ${answers.map((a, i) => {
             const ok = a.sel === a.cor
+            const q = questions[a.qi ?? i]
+            if (!q) return ''
             return `<div class="res-row ${ok ? 'ok' : 'fail'}">
               <span class="rq">Q${i + 1}</span>
-              <span class="rt">${esc(questions[i].q.slice(0, 55))}${questions[i].q.length > 55 ? '…' : ''}</span>
+              <span class="rt">${esc(q.q.slice(0, 55))}${q.q.length > 55 ? '…' : ''}</span>
               <span>${ok ? '✓' : '✗'}</span>
             </div>`
           }).join('')}

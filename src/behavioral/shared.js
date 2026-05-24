@@ -3,8 +3,9 @@ import { state } from '../state.js'
 import { t } from '../i18n.js'
 
 export function getBh() {
-  if (!state.S.behavioral) state.S.behavioral = { resumes: [], stories: [], bqStore: [] }
+  if (!state.S.behavioral) state.S.behavioral = { resumes: [], stories: [], bqStore: [], resumeTemplates: [] }
   if (!state.S.behavioral.bqStore) state.S.behavioral.bqStore = []
+  if (!state.S.behavioral.resumeTemplates) state.S.behavioral.resumeTemplates = []
   return state.S.behavioral
 }
 

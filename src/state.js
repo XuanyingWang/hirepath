@@ -64,6 +64,7 @@ export const state = {
   bhResumeId: null,
   bhBulletId: null,
   bhAddingResume: false,
+  bhBuildResumeView: false,
   editingStoryId: null,
   jobPrepView: null,         // null = home | { type: 'company', name } | { type: 'posting', id }
   apiKey: '',

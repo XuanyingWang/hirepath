@@ -12,17 +12,21 @@ import { addFolder, renameF, delF } from './folders.js'
 import { renameCh, moveCh, doMove, delCh } from './chapters.js'
 import { renderWelcome, resetWelcomeState, getChSource, getChFileName, getChFileContent, chSwitchSource, chPickFile, chHandleFile, chHandleDrop } from './welcome.js'
 import { buildAnalysis } from './analysis.js'
-import { renderKnowledge, rebuildKnowledge } from './knowledge.js'
+import { renderKnowledge, rebuildKnowledge, toggleChQa, sendChQaPreset, sendChQuestion, clearChQa, editChNotes, cancelChNotes, saveChNotes, toggleRefineKnowledge, applyRefineKnowledge } from './knowledge.js'
 import { renderQuizSetup, pickMode, startQuiz, renderQ, toggleHint, pickAns, nextQ, reviewSession } from './quiz.js'
 import { renderFlashcards, generateFlashcards, flipCard, markCard, skipCard, restartFcSession, regenerateFlashcards } from './flashcards.js'
 import { renderDashboard } from './dashboard.js'
-import { renderBhResume, renderBulletDetail, startAddResume, cancelAddResume, submitResume, handleResumeFile, handleResumeDrop, openResume, deleteResume, backToResumeList, openBullet, backToBulletList, generateBulletQs, saveAnswer, polishAnswer, analyzeAnswer, overridePolished, savePolished, clearResumeFile } from './behavioral/resume.js'
+import { renderBhResume, renderBulletDetail, startAddResume, cancelAddResume, submitResume, handleResumeFile, handleResumeDrop, openResume, deleteResume, backToResumeList, openBullet, backToBulletList, generateBulletQs, saveAnswer, polishAnswer, analyzeAnswer, overridePolished, savePolished, clearResumeFile, generateSelfIntro, editSelfIntroPart, saveSelfIntroPart, toggleSelfIntroPractice, toggleSiQa, sendSiPreset, sendSiQuestion, clearSiQa, evaluateSelfIntro, generateTalkingPoints, editTalkingPoint, saveTalkingPoint, toggleTalkingPointsPractice, toggleTpCtxPicker, selectTpCtx, clearTpCtx, toggleTpQa, sendTpPreset, sendTpQuestion, evaluateTalkingPoints, toggleHmSection, generateSpeechSkeleton, toggleSkeleton, clearTpQa, switchSkTab,
+  openBuildResume, backFromBuildResume, editBuildBullet, saveBuildBullet,
+  selectBuildTemplate, toggleAddTemplate, saveNewTemplate, deleteTemplate,
+  generateBuiltResume, copyBuiltResume, copyVersionContent,
+  saveResumeVersion, deleteResumeVersion, toggleResumeVersion } from './behavioral/resume.js'
 import { renderBhStories, newStory, editStory, cancelEditStory, deleteStory, saveStory, polishStory, extractStar, openBulletPicker, closeBulletPicker, pickResume, selectBulletRef, unlinkBulletRef } from './behavioral/stories.js'
 import { renderBqPrep, openBqDetail, closeBqDetail, addBq, saveBq, deleteBq, linkStory, unlinkStory, showStoryPicker, tuneBqAnswer } from './behavioral/bqstore.js'
 import { renderJobPrep, openCompanyView, closeCompanyView, openPostingDetail, addJobPosting, submitJobPosting, deletePosting, connectResume, disconnectResume, showResumePicker, matchBullets } from './jobprep.js'
 import { renderAggregator, aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf } from './aggregator.js'
 import { renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze } from './ood.js'
-import { renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate } from './patterns.js'
+import { renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate, togglePatternRefine, patternRefine } from './patterns.js'
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 
@@ -211,6 +215,9 @@ Object.assign(window, {
   chSwitchSource, chPickFile, chHandleFile, chHandleDrop,
   // Knowledge
   renderKnowledge, rebuildKnowledge,
+  toggleChQa, sendChQaPreset, sendChQuestion, clearChQa,
+  editChNotes, cancelChNotes, saveChNotes,
+  toggleRefineKnowledge, applyRefineKnowledge,
   // Quiz
   pickMode, startQuiz, pickAns, nextQ,
   toggleHint, renderQuizSetup, reviewSession,
@@ -235,6 +242,17 @@ Object.assign(window, {
   backToResumeList, openBullet,
   backToBulletList, generateBulletQs, saveAnswer, polishAnswer, analyzeAnswer,
   renderBulletDetail, overridePolished, savePolished, clearResumeFile,
+  generateSelfIntro, editSelfIntroPart, saveSelfIntroPart, toggleSelfIntroPractice,
+  toggleSiQa, sendSiPreset, sendSiQuestion, clearSiQa, evaluateSelfIntro,
+  generateTalkingPoints, editTalkingPoint, saveTalkingPoint, toggleTalkingPointsPractice,
+  toggleTpCtxPicker, selectTpCtx, clearTpCtx,
+  toggleTpQa, sendTpPreset, sendTpQuestion,
+  evaluateTalkingPoints, toggleHmSection,
+  generateSpeechSkeleton, toggleSkeleton, clearTpQa, switchSkTab,
+  openBuildResume, backFromBuildResume, editBuildBullet, saveBuildBullet,
+  selectBuildTemplate, toggleAddTemplate, saveNewTemplate, deleteTemplate,
+  generateBuiltResume, copyBuiltResume, copyVersionContent,
+  saveResumeVersion, deleteResumeVersion, toggleResumeVersion,
   // STAR stories
   newStory, editStory, cancelEditStory, deleteStory,
   saveStory, polishStory, extractStar,
@@ -255,6 +273,7 @@ Object.assign(window, {
   selOod, renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze,
   // LeetCode Patterns
   selPatterns, renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate,
+  togglePatternRefine, patternRefine,
   // Job Prep
   selJobPrep, renderJobPrep,
   openCompanyView, closeCompanyView, openPostingDetail,

@@ -7,6 +7,8 @@ import { claudeStream } from './api.js'
 // ── Module state ──────────────────────────────────────────────────────────────
 let _currentId = null  // null = list view, string = pattern id
 let _streaming = false
+let _patRefineOpen = false
+let _patRefining = false
 
 function _patterns() {
   if (!state.S.patterns) state.S.patterns = []
@@ -98,14 +100,31 @@ function _renderDetail(main) {
             placeholder="${t('描述核心思路、想重点了解的变体、常见误区等…', 'Describe the core idea, variations to focus on, common pitfalls, etc…')}"
             oninput="patternSaveMeta()">${esc(p.userDesc || '')}</textarea>
         </div>
-        <button class="btn-primary" id="pat-gen-btn" onclick="patternGenerate()" ${_streaming ? 'disabled' : ''}>
-          ${_streaming
-            ? `⏳ ${t('生成中…', 'Generating…')}`
-            : p.generatedAt
-              ? `🔄 ${t('重新生成', 'Regenerate')}`
-              : `✨ ${t('生成学习指南', 'Generate Learning Guide')}`
-          }
-        </button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn-primary" id="pat-gen-btn" onclick="patternGenerate()" ${_streaming || _patRefining ? 'disabled' : ''}>
+            ${_streaming
+              ? `⏳ ${t('生成中…', 'Generating…')}`
+              : p.generatedAt
+                ? `🔄 ${t('重新生成', 'Regenerate')}`
+                : `✨ ${t('生成学习指南', 'Generate Learning Guide')}`
+            }
+          </button>
+          ${p.generated ? `<button class="btn-refine${_patRefineOpen ? ' active' : ''}" onclick="togglePatternRefine()" ${_streaming || _patRefining ? 'disabled' : ''}>✏️ ${t('精调', 'Refine')}</button>` : ''}
+        </div>
+        ${_patRefineOpen && p.generated ? `
+          <div class="refine-panel" id="pat-refine-panel" style="margin-top:12px">
+            <div class="refine-panel-hd">✏️ ${t('精调内容', 'Refine Content')}</div>
+            <div class="refine-panel-hint">${t('描述你希望如何修改或补充现有内容，AI 将保留原有结构进行更新。', 'Describe how you want to update the existing guide. AI will revise it while preserving the structure.')}</div>
+            <textarea class="refine-textarea" id="pat-refine-input" rows="3"
+              placeholder="${t('例如：增加 Java 实现；补充更难的题目；详细解释何时使用双端队列…', 'e.g. Add Java implementation; add harder problems; explain when to use deque in detail…')}"
+              oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'"></textarea>
+            <div class="refine-actions">
+              <button class="btn-primary btn-sm" onclick="patternRefine('${p.id}')" ${_patRefining ? 'disabled' : ''}>
+                ${_patRefining ? `⏳ ${t('更新中…', 'Updating…')}` : `✨ ${t('应用修改', 'Apply Changes')}`}
+              </button>
+              <button class="btn-ghost btn-sm" onclick="togglePatternRefine()">${t('取消', 'Cancel')}</button>
+            </div>
+          </div>` : ''}
       </div>
 
       <div id="pat-output" class="pattern-output rb">
@@ -128,6 +147,7 @@ function _renderDetail(main) {
 
 export function patternOpen(id) {
   _currentId = id
+  _patRefineOpen = false
   renderPatterns()
 }
 
@@ -233,5 +253,49 @@ export async function patternGenerate() {
   }
 
   _streaming = false
+  renderPatterns()
+}
+
+export function togglePatternRefine() {
+  _patRefineOpen = !_patRefineOpen
+  renderPatterns()
+  if (_patRefineOpen) setTimeout(() => document.getElementById('pat-refine-input')?.focus(), 80)
+}
+
+export async function patternRefine(id) {
+  if (_patRefining || _streaming) return
+  const p = _patterns().find(x => x.id === id)
+  if (!p?.generated) return
+  const ta = document.getElementById('pat-refine-input')
+  const comment = ta?.value?.trim()
+  if (!comment) { ta?.focus(); return }
+
+  _patRefining = true
+  renderPatterns()
+
+  const out = document.getElementById('pat-output')
+  if (out) out.innerHTML = `<div class="pat-streaming"><div class="spinner" style="margin:0 auto 14px"></div>${t('AI 正在更新学习指南…', 'AI is updating your learning guide…')}</div>`
+
+  const system = `你是一位算法面试教练。用户有一份现有的算法模式学习指南，并提出了修改意见。请根据用户的指令更新内容，保留原有的 Markdown 结构和格式。只输出更新后的完整 Markdown 内容，不要有任何前言或解释。`
+  const userMsg = `现有内容：\n${p.generated}\n\n用户修改指令：\n${comment}`
+
+  let finalText = ''
+  try {
+    await claudeStream(system, userMsg, 3500, (text) => {
+      finalText = text
+      if (out) out.innerHTML = `<div class="rb">${_renderMd(text)}</div>`
+    })
+    const p2 = _patterns().find(x => x.id === id)
+    if (p2 && finalText) {
+      p2.generated = finalText
+      p2.generatedAt = new Date().toISOString()
+      save()
+    }
+  } catch (err) {
+    showErr(err?.message || String(err))
+  }
+
+  _patRefining = false
+  _patRefineOpen = false
   renderPatterns()
 }
