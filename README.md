@@ -1,6 +1,6 @@
 # HirePath
 
-> AI-powered desktop app for SDE II interview prep — covering technical knowledge, behavioral questions, resume deep-dives, and coding patterns.
+> AI-powered desktop app for SDE interview prep — covering technical knowledge, behavioral questions, resume deep-dives, and coding patterns.
 
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 ![Tauri](https://img.shields.io/badge/Tauri-2.x-blue)
