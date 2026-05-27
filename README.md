@@ -1,82 +1,106 @@
 # HirePath
 
-> AI-powered desktop app for SDE interview prep — covering technical knowledge, behavioral questions, resume deep-dives, and coding patterns.
-
-![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
-![Tauri](https://img.shields.io/badge/Tauri-2.x-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+An AI-powered desktop app to help software engineers prepare for SDE II interviews — from technical depth to behavioral storytelling.
 
 ---
 
-## Features
+## What It Does
 
-| Module | Description |
-|--------|-------------|
-| 📚 **Knowledge Analysis** | Paste a doc URL — AI fetches, analyzes, and generates a structured study guide |
-| ❓ **Quiz** | AI-generated concept & scenario questions calibrated to SDE II level |
-| 🃏 **Flashcards** | Auto-generated flashcard decks from your study materials |
-| 📊 **Dashboard** | Track readiness score across all chapters |
-| 🧠 **OOD Practice** | Object-oriented design interview questions with AI feedback |
-| 🔢 **LeetCode Patterns** | Pattern-based study guides with curated problem sets |
-| 📝 **Resume Deep-Dive** | Bullet-level HM interview questions, answer polishing, and evaluation |
-| 🎤 **Self Introduction** | AI-generated 3-part intro script with practice mode |
-| ⭐ **STAR Stories** | Build and polish behavioral stories with STAR structure extraction |
-| 💼 **BQ Prep** | Behavioral question bank with story-linking and answer tuning |
-| 🏢 **Job Prep** | Parse job postings, match resume bullets, track applications |
-| 📦 **Aggregator** | Batch-analyze multiple docs into a unified knowledge base |
+HirePath brings together every part of the interview process in one place. You feed it your study materials and resume; it generates study guides, practice questions, polished stories, and mock interview content — all tailored to the senior engineer bar.
 
 ---
 
-## Tech Stack
+## Modules
 
-- **Frontend:** Vanilla JS + Vite
-- **Desktop shell:** [Tauri 2](https://tauri.app) (Rust)
-- **AI providers:** Anthropic Claude (default), Google Gemini, OpenAI
-- **Cloud sync:** Supabase (optional)
+### 📚 Knowledge Base
+Turn any technical document into a structured study guide. Paste a URL, upload a PDF, or paste raw text — the AI fetches the content, extracts key concepts, and generates a full knowledge framework covering core concepts, architecture trade-offs, implementation details, performance considerations, and common pitfalls.
+
+### ❓ Quiz
+After studying a chapter, test yourself with 10 AI-generated questions in two modes:
+- **Concept** — definitions, comparisons, principles
+- **Scenario** — system design decisions, fault diagnosis, capacity planning
+
+Each question comes with a hint and a detailed explanation after you answer.
+
+### 🃏 Flashcards
+Generate a deck of flashcards from any chapter for quick review. Flip, mark as learned, or skip — the session tracks your progress.
+
+### 🧩 LeetCode Patterns
+Study algorithmic patterns (sliding window, two pointers, dynamic programming, etc.) with AI-generated guides and curated problem sets. Add your own notes and track which patterns you've mastered.
+
+### 🏗️ OOD Design
+Practice object-oriented design questions. The AI plays the role of an interviewer — ask clarifying questions, design your solution, and get feedback on your approach.
+
+### 📄 Resume Analyzer
+Upload your resume and drill into each bullet point:
+- Generate 5 HM-style deep-dive questions per bullet
+- Practice and polish your answers
+- Get honest feedback scored against the SDE II bar
+- Build a self-introduction script from your resume with a practice mode
+
+### 🎯 BQ Prep
+A behavioral question bank paired with a STAR story library:
+- Browse high-frequency behavioral questions
+- Link your STAR stories to relevant questions
+- Auto-generate polished answers from your stories
+- Practice with speech recognition
+
+### ⭐ STAR Stories
+Build and refine behavioral stories:
+- Free-write a draft and let AI extract the STAR structure
+- Polish the story to be crisp, first-person, and impact-forward
+- Reuse stories across multiple behavioral questions
+
+### 💼 Job Prep
+Track job applications and prep for each role:
+- Paste a job posting URL to auto-extract requirements and responsibilities
+- Connect your resume and see which bullets match the role
+- Prep tailored talking points per company
+
+### 🖼️ Knowledge Aggregator
+Batch-analyze multiple documents at once into a unified study guide — useful for consolidating notes from several related topics into one coherent reference.
+
+### 📊 Progress Dashboard
+See your overall readiness at a glance — chapter coverage, quiz scores, and weak areas that need more attention.
+
+---
+
+## AI Providers
+
+HirePath supports three AI providers. Switch between them in Settings:
+
+| Provider | Model |
+|----------|-------|
+| **Anthropic Claude** (default) | claude-sonnet-4 / claude-haiku-4 |
+| Google Gemini | gemini-2.0-flash |
+| OpenAI | gpt-4o-mini |
+
+All API keys are stored locally on your machine and never sent anywhere other than the respective AI provider.
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### Requirements
+- macOS (Windows support coming)
+- [Node.js](https://nodejs.org) 18+
+- [Rust](https://rustup.rs)
 
-| Tool | Version |
-|------|---------|
-| Node.js | 18+ |
-| Rust / Cargo | 1.77+ |
-| Tauri CLI | 2.x (installed as dev-dep) |
-
-### Install & Run
+### Run Locally
 
 ```bash
-# Clone
 git clone https://github.com/XuanyingWang/hirepath.git
 cd hirepath
-
-# Install JS dependencies
 npm install
-
-# Start in dev mode (opens desktop window with hot reload)
 npm run tauri dev
 ```
 
-The first `tauri dev` run compiles the Rust crate — takes a few minutes. Subsequent runs are fast thanks to incremental compilation.
+On first launch, the app will prompt you to enter an API key. Get one at:
+- **Claude:** [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+- **Gemini:** [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+- **OpenAI:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
-### Configure API Key
-
-On first launch a settings dialog will appear. Enter your API key:
-
-| Provider | Where to get it |
-|----------|----------------|
-| **Anthropic Claude** (default) | [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) |
-| Google Gemini | [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
-| OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
-
-> **Note:** Claude Pro (claude.ai subscription) and the Anthropic API are separate products with separate billing. The API requires its own account at [console.anthropic.com](https://console.anthropic.com).
-
-Keys are stored locally in the OS app-config directory and never leave your machine except in requests to the respective AI provider.
-
-### Build for Production
+### Build
 
 ```bash
 npm run tauri build
@@ -85,39 +109,18 @@ npm run tauri build
 
 ---
 
-## Cloud Sync (Optional)
+## Optional: Cloud Sync
 
-HirePath supports optional cloud backup and cross-device sync via Supabase:
+Sign in with a magic link (email) to back up your data and sync across devices via Supabase. To self-host:
 
 1. Create a free project at [supabase.com](https://supabase.com)
-2. Copy `.env.example` to `.env` and fill in your project URL and anon key
-3. Sign in with a magic link from the Settings panel
+2. Copy `.env.example` → `.env` and fill in your project URL and anon key
 
 ---
 
-## Project Structure
+## Tech Stack
 
-```
-hirepath/
-├── src/                    # Frontend (Vanilla JS + Vite)
-│   ├── behavioral/         # Resume, STAR stories, BQ prep
-│   ├── analysis.js         # AI knowledge analysis
-│   ├── quiz.js             # Quiz generation
-│   ├── flashcards.js       # Flashcard generation
-│   ├── patterns.js         # LeetCode patterns
-│   ├── ood.js              # OOD practice
-│   ├── jobprep.js          # Job posting tracker
-│   ├── dashboard.js        # Readiness dashboard
-│   └── api.js              # AI provider abstraction (Claude / Gemini / OpenAI)
-├── src-tauri/              # Rust backend (Tauri 2)
-│   ├── src/lib.rs          # Tauri commands — AI calls, file I/O, PDF parsing
-│   └── capabilities/       # Frontend permission configuration
-├── .env.example            # Supabase config template
-└── package.json
-```
-
----
-
-## License
-
-MIT
+- **UI:** Vanilla JS + Vite
+- **Desktop:** Tauri 2 (Rust)
+- **AI:** Anthropic Claude, Google Gemini, OpenAI
+- **Sync:** Supabase (optional)
