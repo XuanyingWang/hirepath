@@ -95,7 +95,7 @@ export function renderDashboard() {
 
       <div class="dash-readiness">
         <div class="dash-readiness-label">
-          ${t('整体备考就绪度', 'Overall L5 Readiness')}
+          ${t('整体备考就绪度', 'Overall SDE II Readiness')}
           <span class="dash-readiness-pct">${readinessPct}%</span>
         </div>
         <div class="dash-readiness-bar">
@@ -153,7 +153,7 @@ function _buildRecommendations(rows) {
   if (needs.length === 0) return `
     <div class="dash-section-hd" style="margin-top:20px">🎉 ${t('备考建议', 'Recommendations')}</div>
     <div class="dash-rec-box dash-rec-great">
-      ${t('所有章节表现良好！继续保持，冲击 L5！', 'All chapters looking great! Keep it up — you\'re L5-ready!')}
+      ${t('所有章节表现良好！继续保持，冲击 SDE II！', 'All chapters looking great! Keep it up — you\'re SDE II-ready!')}
     </div>`
 
   return `

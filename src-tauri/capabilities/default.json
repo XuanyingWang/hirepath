@@ -2,5 +2,12 @@
   "identifier": "default",
   "description": "Default capability for L5 Prep",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-open"]
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "dialog:allow-message",
+    "dialog:allow-ask",
+    "dialog:default"
+  ]
 }

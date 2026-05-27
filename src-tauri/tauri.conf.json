@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "L5 Prep",
+  "productName": "SDE II Prep",
   "version": "0.1.0",
   "identifier": "com.l5prep.app",
   "build": {
@@ -13,7 +13,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "L5 Prep - Google SDE Interview",
+        "title": "SDE II Prep - General SDE Interview",
         "width": 1280,
         "height": 860,
         "resizable": true,

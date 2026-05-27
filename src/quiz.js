@@ -34,7 +34,7 @@ export function renderQuizSetup() {
   document.getElementById('mainContent').innerHTML = `
     <div class="quiz-setup">
       <h2>Quiz · ${esc(c.name)}</h2>
-      <p>${t('选择题型，AI 生成 10 道定制的 L5 面试题目，每题含提示和解析。', 'Choose a question type. AI generates 10 custom L5 interview questions, each with a hint and explanation.')}</p>
+      <p>${t('选择题型，AI 生成 10 道定制的 SDE II 面试题目，每题含提示和解析。', 'Choose a question type. AI generates 10 custom SDE II interview questions, each with a hint and explanation.')}</p>
       <div class="mode-grid">
         <div class="mode-card${selectedMode === 'concept' ? ' selected' : ''}" onclick="pickMode(this,'concept')">
           <div class="mi">💡</div><div class="mt">${t('概念题', 'Concept')}</div>
@@ -57,7 +57,7 @@ export function pickMode(el, m) {
 
 export async function startQuiz() {
   const c = gch(); const mode = state.setupModes[state.activeCid] || 'concept'
-  showLoading(t('正在生成题目…', 'Generating questions…'), t(`生成 10 道 L5 级别${mode === 'concept' ? '概念' : '场景'}题`, `Generating 10 L5-level ${mode === 'concept' ? 'concept' : 'scenario'} questions`))
+  showLoading(t('正在生成题目…', 'Generating questions…'), t(`生成 10 道 SDE II 级别${mode === 'concept' ? '概念' : '场景'}题`, `Generating 10 SDE II-level ${mode === 'concept' ? 'concept' : 'scenario'} questions`))
   try {
     const qs = await genQuiz(c, mode)
     state.quizState = { cid: state.activeCid, mode, questions: qs, current: 0, answers: [], score: 0 }
@@ -75,14 +75,14 @@ async function genQuiz(c, mode) {
   const sys = '只返回一个合法的 JSON 数组，不要包含任何 markdown 标记、解释或文字说明代码块。直接输出 [ 开头的 JSON。'
 
   const makePrompt = (batch, start, angleHint) =>
-    `请为 Google L5 SDE 面试出第 ${start + 1}-${start + batch} 道关于「${c.name}」的${mDesc}，共出 ${batch} 道。${angleHint}
+    `请为 SDE II 面试出第 ${start + 1}-${start + batch} 道关于「${c.name}」的${mDesc}，共出 ${batch} 道。${angleHint}
 
 知识摘要：
 ${digest}
 
 要求：
 - 所有题目、选项、提示、解析必须用中文（代码/API名称除外）
-- L5 难度：需要深度理解，不能死记硬背
+- SDE II 难度：需要深度理解，不能死记硬背
 - 每题恰好 4 个选项，只有一个正确答案（correct 为 0-3 的索引）
 - hint：一句话提示，不直接透露答案
 - explanation：2-3 句话解释正确答案的原因，以及其他选项为什么错误

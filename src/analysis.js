@@ -9,7 +9,7 @@ import { claude } from './api.js'
 const PASTE_CAP = 25_000
 
 export async function buildAnalysis(name, url, pasteContent = '') {
-  const sys = `你是一名资深 Google L5 工程师，正在为备考 L5 系统设计面试的候选人撰写中文学习笔记。
+  const sys = `你是一名资深 SDE II 工程师，正在为备考 SDE II 系统设计面试的候选人撰写中文学习笔记。
 
 【核心原则】：
 - 面试考察的是架构思维、系统权衡和工程判断，不是写代码的能力
@@ -47,7 +47,7 @@ export async function buildAnalysis(name, url, pasteContent = '') {
 
 ## 🔑 核心概念与术语词典
 列出文档中出现的**所有**重要技术术语（不限数量）。
-每条格式：**术语** — 精确定义（1-2句）+ 它在系统中的作用 + 为什么 L5 候选人必须掌握它。
+每条格式：**术语** — 精确定义（1-2句）+ 它在系统中的作用 + 为什么 SDE II 候选人必须掌握它。
 
 ## 🏗️ 系统架构
 - 用 ASCII art 或分层文字描述整体架构（组件、层次、边界）
@@ -81,17 +81,17 @@ export async function buildAnalysis(name, url, pasteContent = '') {
 
 ## ⚖️ 与替代方案的横向对比
 创建对比表格，列：方案 | 适用场景 | 核心优势 | 核心劣势 | 典型生产案例
-涵盖文档中提到的所有替代方案，以及 L5 面试中必须了解的相关技术。
+涵盖文档中提到的所有替代方案，以及 SDE II 面试中必须了解的相关技术。
 
 ## 🔧 适用场景与反模式
 - 最适合的场景（附理由）
 - 不应使用的场景（附理由）
-- Google/Netflix/Amazon 等公司的真实使用案例`, 6000),
+- top tech companies (Google/Meta/Amazon/Netflix) 等公司的真实使用案例`, 6000),
 
-    // ── Part 3: Best Practices + Pitfalls + L5 Exam Focus + Q&A ─────────────
+    // ── Part 3: Best Practices + Pitfalls + SDE II Exam Focus + Q&A ─────────────
     claude(sys,
       context +
-      `请为「${name}」撰写学习笔记第三部分。聚焦实战经验和 L5 面试应对。
+      `请为「${name}」撰写学习笔记第三部分。聚焦实战经验和 SDE II 面试应对。
 
 ## ✅ 最佳实践
 用 bullet list 列出所有重要最佳实践（配置选项、使用模式、容量规划、监控运维）。
@@ -101,13 +101,13 @@ export async function buildAnalysis(name, url, pasteContent = '') {
 编号列表，格式：**陷阱名** — 描述问题 + 说明后果 + 给出正确做法。
 包含：配置错误、性能陷阱、一致性误解、运维盲区、常见面试误答。
 
-## 🎯 L5 面试考点精析
-列出所有 L5 面试中可能考察的知识点（不限数量）。
-格式：**考点** → 面试官期望的回答深度 + 需要体现的 L5 视角（系统权衡、规模化、故障处理）。
+## 🎯 SDE II 面试考点精析
+列出所有 SDE II 面试中可能考察的知识点（不限数量）。
+格式：**考点** → 面试官期望的回答深度 + 需要体现的 SDE II 视角（系统权衡、规模化、故障处理）。
 
 ## 💬 模拟面试 Q&A（5题）
-提供 5 道典型 L5 系统设计面试问题 + 示范回答。
-每道回答结构：核心答案（1-2句）→ 关键权衡 → L5 深度补充。
+提供 5 道典型 SDE II 系统设计面试问题 + 示范回答。
+每道回答结构：核心答案（1-2句）→ 关键权衡 → SDE II 深度补充。
 回答聚焦架构判断和权衡分析，不写代码。`, 6000),
   ])
 

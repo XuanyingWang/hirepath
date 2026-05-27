@@ -175,7 +175,7 @@ function renderAddResume() {
         <div style="max-width:640px">
           <div class="star-section">
             <div class="star-label">${t('简历名称', 'Resume Name')}</div>
-            <input class="modal-input" id="rn_name" placeholder="${t('例：Google L5 简历 2024', 'e.g. Google L5 Resume 2024')}" style="width:100%;margin-bottom:0">
+            <input class="modal-input" id="rn_name" placeholder="${t('例：SDE II 简历 2024', 'e.g. SDE II Resume 2024')}" style="width:100%;margin-bottom:0">
           </div>
           <div class="star-section">
             <div class="star-label">${t('上传文件', 'Upload File')}
@@ -393,7 +393,7 @@ export function renderBulletDetail() {
               </div>
               <div class="ans-actions" id="ans-actions-${q.id}">
                 <button class="btn-ans-action" onclick="polishAnswer('${resume.id}','${bullet.id}','${q.id}')">✨ ${t('润色回答', 'Polish Answer')}</button>
-                <button class="btn-ans-action btn-ans-analyze" onclick="analyzeAnswer('${resume.id}','${bullet.id}','${q.id}')">📊 ${t('L5 评估', 'L5 Analysis')}</button>
+                <button class="btn-ans-action btn-ans-analyze" onclick="analyzeAnswer('${resume.id}','${bullet.id}','${q.id}')">📊 ${t('SDE II 评估', 'SDE II Analysis')}</button>
               </div>
               ${q.polished ? `
                 <div class="ans-result-box ans-polished">
@@ -409,7 +409,7 @@ export function renderBulletDetail() {
               ${q.feedback ? `
                 <div class="ans-result-box ans-feedback">
                   <div class="ans-result-hd">
-                    <div class="ans-result-label">📊 ${t('L5 评估', 'L5 Analysis')}</div>
+                    <div class="ans-result-label">📊 ${t('SDE II 评估', 'SDE II Analysis')}</div>
                     <button class="ans-result-btn" onclick="var b=this.closest('.ans-result-box');b.classList.toggle('collapsed');this.textContent=b.classList.contains('collapsed')?'▸':'▾'">▾</button>
                   </div>
                   <div class="ans-result-text">${esc(q.feedback)}</div>
@@ -430,7 +430,7 @@ export async function generateBulletQs(resumeId, bulletId) {
   if (!bullet) return
   showLoading(t('正在生成主管追问…', 'Generating HM questions…'), t('正在准备针对该经历的深度追问', 'Preparing deep-dive questions about this experience'))
   try {
-    const sys = `You are a senior engineering manager at Google conducting an L5 SWE hiring manager interview. Generate exactly 5 deep-dive questions about this specific experience bullet. Each question must probe a different dimension: (1) technical depth & decision rationale, (2) scope of impact & cross-functional influence, (3) handling ambiguity or tradeoffs, (4) leadership or influence without authority, (5) reflection — what they would do differently and what they learned. Return ONLY a JSON array of 5 question strings.`
+    const sys = `You are a senior engineering manager at Google conducting an SDE II hiring manager interview. Generate exactly 5 deep-dive questions about this specific experience bullet. Each question must probe a different dimension: (1) technical depth & decision rationale, (2) scope of impact & cross-functional influence, (3) handling ambiguity or tradeoffs, (4) leadership or influence without authority, (5) reflection — what they would do differently and what they learned. Return ONLY a JSON array of 5 question strings.`
     const raw = await claudeJSON(sys, `Role: ${bullet.role}\nExperience bullet: "${bullet.text}"`, 800, '[')
     const qs = JSON.parse(raw)
     bullet.hmQuestions = qs.map(q => ({ id: uid(), text: typeof q === 'string' ? q : String(q), answer: '' }))
@@ -474,7 +474,7 @@ export async function polishAnswer(resumeId, bulletId, questionId) {
       + '</div>')
   }
   try {
-    const sys = `You are a senior Google L5 SWE interview coach helping a candidate nail a hiring manager interview. Polish the candidate's answer to be crisp, first-person, impact-forward, and L5-appropriate. Rules: use "I" not "we"; lead with the most impactful point; be specific and include any metrics mentioned; cut filler words; keep it under 150 words. Return ONLY the polished answer text with no preamble.`
+    const sys = `You are a senior SDE II interview coach helping a candidate nail a hiring manager interview. Polish the candidate's answer to be crisp, first-person, impact-forward, and SDE II-appropriate. Rules: use "I" not "we"; lead with the most impactful point; be specific and include any metrics mentioned; cut filler words; keep it under 150 words. Return ONLY the polished answer text with no preamble.`
     q.polished = await claudeStream(
       sys,
       `Experience bullet: "${bullet.text}"\n\nQuestion: ${q.text}\n\nCandidate answer: ${q.answer}`,
@@ -510,15 +510,15 @@ export async function analyzeAnswer(resumeId, bulletId, questionId) {
     qItem2.querySelectorAll('.ans-feedback').forEach(el => el.remove())
     qItem2.insertAdjacentHTML('beforeend',
       '<div class="ans-result-box ans-feedback" id="stream-box-analysis-' + questionId + '">'
-      + '<div class="ans-result-hd"><div class="ans-result-label">📊 ' + t('L5 评估', 'L5 Analysis') + '</div></div>'
+      + '<div class="ans-result-hd"><div class="ans-result-label">📊 ' + t('SDE II 评估', 'SDE II Analysis') + '</div></div>'
       + '<div class="ans-result-text stream-active" id="stream-text-analysis-' + questionId + '"></div>'
       + '</div>')
   }
   try {
-    const sys = `You are a Google L5 SWE hiring manager evaluating a candidate's answer against the L5 bar. Give honest, actionable feedback in exactly 3 labeled bullet points:
+    const sys = `You are a SDE II hiring manager evaluating a candidate's answer against the SDE II bar. Give honest, actionable feedback in exactly 3 labeled bullet points:
 • Strengths: what works well (specificity, impact, leadership signal)
 • Gaps: what's missing or weak (push for more depth, metrics, ownership, cross-team influence)
-• Verdict: one sentence — does this clear the L5 bar, and what's the biggest thing to fix?
+• Verdict: one sentence — does this clear the SDE II bar, and what's the biggest thing to fix?
 Be direct. No preamble, no sign-off.`
     q.feedback = await claudeStream(
       sys,
@@ -573,7 +573,7 @@ const _SI_PRESETS = {
   story:  [{ key: 'moredata',  label: t('加入更多数据？', 'Add more metrics?') },
            { key: 'toolong',   label: t('太冗长？',     'Too long?') }],
   bridge: [{ key: 'generic',   label: t('太泛泛了？',   'Too generic?') },
-           { key: 'tailorl5',  label: t('针对 L5 调整？', 'Tailor for L5?') }],
+           { key: 'tailorl5',  label: t('针对 SDE II 调整？', 'Tailor for SDE II?') }],
 }
 const _SI_PRESET_QS = {
   stronger: t('My HOOK sentence — make it more memorable and impactful. Be specific about what should change and why.', 'My HOOK sentence — make it more memorable and impactful. Be specific about what should change and why.'),
@@ -581,7 +581,7 @@ const _SI_PRESET_QS = {
   moredata: t('How can I add more quantifiable impact or scale to my STORY? What metrics or proof points are missing?', 'How can I add more quantifiable impact or scale to my STORY? What metrics or proof points are missing?'),
   toolong:  t('Is my STORY over-explaining or losing the interviewer? What should I cut to tighten it to 30 seconds?', 'Is my STORY over-explaining or losing the interviewer? What should I cut to tighten it to 30 seconds?'),
   generic:  t('Does my BRIDGE sound cliché or vague? How do I make it feel genuine and specific to my next challenge?', 'Does my BRIDGE sound cliché or vague? How do I make it feel genuine and specific to my next challenge?'),
-  tailorl5: t('How should I tailor my BRIDGE specifically for an L5 FAANG role to show I understand the bar?', 'How should I tailor my BRIDGE specifically for an L5 FAANG role to show I understand the bar?'),
+  tailorl5: t('How should I tailor my BRIDGE specifically for an SDE II FAANG role to show I understand the bar?', 'How should I tailor my BRIDGE specifically for an SDE II FAANG role to show I understand the bar?'),
 }
 
 function _siQaPanel(resume, part) {
@@ -679,7 +679,7 @@ export async function generateSelfIntro(resumeId) {
   if (!resume) return
   showLoading(t('正在生成自我介绍…', 'Generating self introduction…'), t('Claude 正在基于您的完整简历撰写结构化介绍', 'Claude is writing a structured introduction from your full resume'))
   try {
-    const sys = `You are a world-class L5 Google SWE interview coach. Generate a structured self-introduction script in 3 parts based on the candidate's resume.
+    const sys = `You are a world-class SDE II Google SWE interview coach. Generate a structured self-introduction script in 3 parts based on the candidate's resume.
 
 HOOK (15-20 sec): One strong opening sentence. Lead with biggest impact or expertise area, NOT job title. Make it memorable and specific.
 YOUR STORY (25-35 sec): Crisp narrative connecting key roles and showing progression. Include 2+ specific proof points with numbers or scale. Use "I", be concrete and specific.
@@ -781,7 +781,7 @@ async function _doSiQuestion(resumeId, part, question) {
     </div>`)
   answersEl.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   const partNames = { hook: 'HOOK', story: 'YOUR STORY', bridge: 'WHY HERE' }
-  const sys = `You are an expert L5 interview coach. Give a short, direct answer (2-4 sentences max) to the candidate's specific question about their self-introduction ${partNames[part] || part} section. Be concrete and actionable. No preamble, no sign-off.`
+  const sys = `You are an expert SDE II interview coach. Give a short, direct answer (2-4 sentences max) to the candidate's specific question about their self-introduction ${partNames[part] || part} section. Be concrete and actionable. No preamble, no sign-off.`
   const convHistory = _buildConvHistory(resume.siQaHistory?.[part])
   const histLabel = convHistory ? `\n\nConversation so far:\n${convHistory}\n\nFollow-up question` : `\n\nQuestion`
   const userMsg = `Full resume:\n${resume.text}\n\nSelf Introduction:\nHOOK: "${resume.selfIntro.hook}"\nYOUR STORY: "${resume.selfIntro.story}"\nWHY HERE: "${resume.selfIntro.bridge}"${histLabel} about ${partNames[part] || part}: ${question}`
@@ -828,10 +828,10 @@ export async function evaluateSelfIntro(resumeId) {
     <div class="ans-result-text stream-active" id="si-eval-text-${resumeId}"></div>
   </div>`
   const si = resume.selfIntro
-  const sys = `You are an L5 interview coach evaluating a candidate's self-introduction for a FAANG senior engineer interview. Give honest, actionable feedback in 3 labeled bullet points:
+  const sys = `You are an SDE II interview coach evaluating a candidate's self-introduction for a FAANG senior engineer interview. Give honest, actionable feedback in 3 labeled bullet points:
 • Strengths: what works well (memorable hook, specific proof points with numbers, genuine bridge, clear progression arc)
 • Gaps: what's weak or missing (generic language, missing metrics, starts with job title, bridge feels vague or cliché, story has no arc)
-• Verdict: one sentence — does this sound L5-level, and what's the #1 thing to fix?
+• Verdict: one sentence — does this sound SDE II-level, and what's the #1 thing to fix?
 Be direct and specific. No preamble.`
   const userMsg = `Candidate's resume:\n${resume.text}\n\nSelf Introduction:\nHOOK (~20s): ${si.hook}\nYOUR STORY (~30s): ${si.story}\nWHY HERE (~15s): ${si.bridge}`
   try {
@@ -870,9 +870,9 @@ const _TP_PRESETS = {
 const _TP_PRESET_QUESTIONS = {
   brief:      "How brief should my SITUATION be? What's the right amount of context to set without over-explaining?",
   include:    "What specific details should I include in my SITUATION? What does the interviewer actually need to know?",
-  technical:  "How deep should I go technically in the CHALLENGE section? What level is right for an L5 HM interview?",
+  technical:  "How deep should I go technically in the CHALLENGE section? What level is right for an SDE II HM interview?",
   frame:      "How should I frame this challenge to show it was genuinely hard, without sounding like we failed?",
-  senior:     "How can I make my ACTION section sound more senior/L5? What signals show high-level ownership?",
+  senior:     "How can I make my ACTION section sound more senior/SDE II? What signals show high-level ownership?",
   ownership:  "How do I highlight my individual contribution without dismissing the team?",
   nometrics:  "I don't have exact numbers for my RESULT. How should I handle this without sounding vague?",
   impact:     "How should I frame the business impact in my RESULT for an engineering manager audience?",
@@ -1035,7 +1035,7 @@ export async function generateTalkingPoints(resumeId, bulletId) {
   if (!bullet) return
   showLoading(t('正在生成谈话要点…', 'Generating talking points…'), t('Claude 正在为该经历生成 SCAR 框架', 'Claude is creating a SCAR framework for this experience'))
   try {
-    const sys = `You are an L5 interview coach. Generate 4 SCAR talking points for this specific experience bullet.
+    const sys = `You are an SDE II interview coach. Generate 4 SCAR talking points for this specific experience bullet.
 
 SITUATION (5 sec): 1-2 sentences of context — company, team size, project scope. Keep SHORT.
 CHALLENGE (10 sec, MOST IMPORTANT): What was genuinely hard, ambiguous, or high-stakes? Go deep. What made it technically or organizationally difficult? Do NOT gloss over — this is what interviewers remember most.
@@ -1213,7 +1213,7 @@ export function switchSkTab(bulletId, mode) {
   if (body) body.innerHTML = _skPane(resume, bullet, mode)
 }
 
-const _SK_QUICK_SYS = `You are an expert L5 interview coach. Generate a QUICK speech skeleton (1-2 min reference card) for walking through this experience.
+const _SK_QUICK_SYS = `You are an expert SDE II interview coach. Generate a QUICK speech skeleton (1-2 min reference card) for walking through this experience.
 
 Use this EXACT hierarchical format — no other format:
 ## SECTION TITLE (~Xs)
@@ -1244,7 +1244,7 @@ Required sections:
 
 Be specific to THIS bullet. First-person. Each → point is ONE short phrase or sentence — this is a glance-card, not a script.`
 
-const _SK_DEEP_SYS = `You are an expert L5 interview coach. Generate a COMPREHENSIVE speech skeleton for a 10-minute hiring manager deep dive on this experience. Think like a directory tree — sections branch into sub-points which branch into specifics.
+const _SK_DEEP_SYS = `You are an expert SDE II interview coach. Generate a COMPREHENSIVE speech skeleton for a 10-minute hiring manager deep dive on this experience. Think like a directory tree — sections branch into sub-points which branch into specifics.
 
 Use this EXACT hierarchical format (3 levels):
 ## SECTION TITLE ⭐ (~Xmin)   ← mark ⭐ on the 2 most critical sections
@@ -1448,7 +1448,7 @@ async function _doTpQuestion(resumeId, bulletId, part, question) {
   answersEl.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   const contextStr = _buildContextStr(bullet)
   const partNames = { stage: 'SITUATION', challenge: 'CHALLENGE', action: 'ACTION', result: 'RESULT' }
-  const sys = `You are an expert L5 interview coach. Give a short, direct answer (2-4 sentences max) to the candidate's specific question about their ${partNames[part] || part} talking point. Be concrete and actionable. No preamble, no sign-off.`
+  const sys = `You are an expert SDE II interview coach. Give a short, direct answer (2-4 sentences max) to the candidate's specific question about their ${partNames[part] || part} talking point. Be concrete and actionable. No preamble, no sign-off.`
   const convHistory = _buildConvHistory(bullet.tpQaHistory?.[part])
   const histLabel = convHistory ? `\n\nConversation so far:\n${convHistory}\n\nFollow-up question` : '\nQuestion'
   const userMsg = `Experience bullet: "${bullet.text}"\nRole: ${bullet.role}\n${partNames[part]}: "${bullet.talkingPoints[part]}"${contextStr}${histLabel}: ${question}`
@@ -1488,10 +1488,10 @@ export async function evaluateTalkingPoints(resumeId, bulletId) {
     <div class="ans-result-text stream-active" id="tp-eval-text-${bulletId}"></div>
   </div>`
   const tp = bullet.talkingPoints
-  const sys = `You are an L5 interview coach evaluating a candidate's SCAR talking points. Give honest, actionable feedback in 3 labeled bullet points:
+  const sys = `You are an SDE II interview coach evaluating a candidate's SCAR talking points. Give honest, actionable feedback in 3 labeled bullet points:
 • Strengths: what works well (good specificity, strong challenge framing, clear individual contribution, concrete metrics)
 • Gaps: what's weak or missing (vague language, weak challenge depth, "we" instead of "I", missing numbers, over-explaining context)
-• Verdict: one sentence — does this sound L5-level, and what's the #1 thing to fix?
+• Verdict: one sentence — does this sound SDE II-level, and what's the #1 thing to fix?
 Be direct and specific. No preamble.`
   const userMsg = `Experience bullet: "${bullet.text}"\nRole: ${bullet.role}\n\nSITUATION: ${tp.stage}\nCHALLENGE: ${tp.challenge}\nACTION: ${tp.action}\nRESULT: ${tp.result}`
   try {
@@ -1748,7 +1748,7 @@ export async function generateBuiltResume(resumeId) {
   const template = bh.resumeTemplates.find(t => t.id === _buildSelectedTemplateId)
 
   const sys = template
-    ? `You are an expert resume writer for L5 Software Engineer candidates.
+    ? `You are an expert resume writer for SDE II Software Engineer candidates.
 Rewrite the candidate's resume to exactly match the FORMAT of the provided template, using their updated experience bullets as content.
 
 TEMPLATE FORMAT (mirror this structure, section order, bullet length, and writing style exactly):
@@ -1760,7 +1760,7 @@ Instructions:
 - Keep all technical vocabulary and specifics; do NOT fabricate information
 - Infer Skills/Education sections from the template structure and bullet content
 Return the complete, ready-to-use resume text in the same format as the template.`
-    : `You are an expert resume writer. Generate a polished, L5-optimized SWE resume using these experience bullets.
+    : `You are an expert resume writer. Generate a polished, SDE II-optimized SWE resume using these experience bullets.
 Use standard FAANG resume format: strong action verbs, metrics-focused, ATS-friendly, reverse-chronological.
 Include a Skills section inferred from the bullet content.
 Return complete, ready-to-use resume text.`

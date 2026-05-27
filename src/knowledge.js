@@ -16,7 +16,7 @@ let _refining = false        // refine AI call in progress?
 const _CH_QA_PRESETS = [
   { key: 'relevance',  label: () => t('我的经历相关性？',  'My experience relevance?') },
   { key: 'gaps',       label: () => t('我的知识缺口？',    'My knowledge gaps?') },
-  { key: 'l5angle',   label: () => t('L5 面试角度？',     'L5 interview angle?') },
+  { key: 'l5angle',   label: () => t('SDE II 面试角度？',     'SDE II interview angle?') },
   { key: 'highlight', label: () => t('应该重点展示什么？', 'What to highlight?') },
 ]
 
@@ -166,7 +166,7 @@ export function renderKnowledge() {
           ${srcHtml}
           <span>·</span>
           <span>${new Date(c.createdAt).toLocaleDateString(state.lang === 'en' ? 'en-US' : 'zh-CN')}</span>
-          <span class="meta-chip">L5</span>
+          <span class="meta-chip">SDE II</span>
           ${qaBtn}
           ${c.analysis ? `<button class="btn-rebuild" onclick="rebuildKnowledge()" title="${t('重新生成学习框架', 'Regenerate knowledge framework')}">↺ ${t('重新生成', 'Regenerate')}</button>` : ''}
           ${c.analysis ? `<button class="btn-refine${_refineOpen ? ' active' : ''}" onclick="toggleRefineKnowledge()" title="${t('根据批注更新内容', 'Update content with comments')}">✏️ ${t('精调', 'Refine')}</button>` : ''}
@@ -267,7 +267,7 @@ export function sendChQaPreset(cid, key) {
   const presetMap = {
     relevance: t('根据我的经历背景，这个主题与我的相关性如何？我有哪些匹配的经验？', 'Based on my background, how relevant is this topic to me? What matching experience do I have?'),
     gaps:      t('对比这个主题的核心要点，我的知识或经验有哪些缺口？', 'Comparing against the key points of this topic, what are my knowledge or experience gaps?'),
-    l5angle:  t('在 L5 系统设计或行为面试中，这个主题通常如何考察？我应该准备哪些角度？', 'In L5 system design or behavioral interviews, how is this topic typically assessed? What angles should I prepare?'),
+    l5angle:  t('在 SDE II 系统设计或行为面试中，这个主题通常如何考察？我应该准备哪些角度？', 'In SDE II system design or behavioral interviews, how is this topic typically assessed? What angles should I prepare?'),
     highlight: t('基于我的经历，面试时我应该重点展示哪些内容来匹配这个主题？', 'Based on my experience, what should I highlight in an interview to best match this topic?'),
   }
   const q = presetMap[key]
@@ -292,7 +292,7 @@ async function _doChQuestion(cid, q) {
   const history = c.qaHistory || []
   const convHistory = history.slice(-6).map(e => `User: ${e.q}\nAssistant: ${e.a}`).join('\n\n')
 
-  const sys = `You are an L5 SWE interview coach. The candidate will ask you a question. Synthesize their overall experience holistically and answer directly in 3-5 concise bullet points. Never iterate through individual bullets or repeat context.
+  const sys = `You are an SDE II interview coach. The candidate will ask you a question. Synthesize their overall experience holistically and answer directly in 3-5 concise bullet points. Never iterate through individual bullets or repeat context.
 
 Candidate's overall experience:
 ${profileCtx}

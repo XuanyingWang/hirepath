@@ -165,9 +165,9 @@ export function renderWelcome() {
   document.getElementById('mainContent').innerHTML = `
     <div class="welcome">
       <div class="welcome-hero">
-        <h1>Google <em>L5 SDE</em><br>${t('面试备考助手', 'Interview Prep')}</h1>
-        <p>${t('输入技术文档 URL，AI 自动抓取内容并深度解析知识要点，<br>生成结构化学习框架，并出针对 L5 水平的定制面试题。',
-          'Enter a technical doc URL — AI fetches and deep-analyzes the content,<br>generating a structured knowledge framework and L5-calibrated quiz questions.')}</p>
+        <h1><em>SDE II</em><br>${t('面试备考助手', 'Interview Prep')}</h1>
+        <p>${t('输入技术文档 URL，AI 自动抓取内容并深度解析知识要点，<br>生成结构化学习框架，并出针对 SDE II 水平的定制面试题。',
+          'Enter a technical doc URL — AI fetches and deep-analyzes the content,<br>generating a structured knowledge framework and SDE II-calibrated quiz questions.')}</p>
       </div>
       <div class="form-card">
         <div class="form-group">

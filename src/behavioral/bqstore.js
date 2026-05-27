@@ -311,7 +311,7 @@ export async function tuneBqAnswer(bqId) {
 
   try {
     const storyText = story.polished || _formatStory(story)
-    const sys = 'You are a senior Google L5 SWE interview coach. Given a candidate\'s STAR story and a specific behavioral question, craft a concise, polished answer (under 250 words) that directly addresses the question. Use the STAR structure but prioritize the most relevant parts. Always use "I" not "we". Be specific and include metrics if mentioned. Start with a strong opening sentence. Return ONLY the answer text, no preamble.'
+    const sys = 'You are a senior SDE II interview coach. Given a candidate\'s STAR story and a specific behavioral question, craft a concise, polished answer (under 250 words) that directly addresses the question. Use the STAR structure but prioritize the most relevant parts. Always use "I" not "we". Be specific and include metrics if mentioned. Start with a strong opening sentence. Return ONLY the answer text, no preamble.'
     const userMsg = 'Behavioral Question: ' + bq.question + '\n\nCandidate\'s STAR Story:\n' + storyText
     bq.tunedAnswer = await claudeStream(sys, userMsg, 700, (accumulated) => {
       const el = document.getElementById('tuned-text-' + bqId)

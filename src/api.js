@@ -211,16 +211,22 @@ export async function doSignOut() {
 }
 
 /** Save all three API keys + provider choice. */
+function _showSettingsError(msg) {
+  const existing = document.getElementById('settings-err')
+  if (existing) existing.remove()
+  const el = document.createElement('p')
+  el.id = 'settings-err'
+  el.style.cssText = 'color:var(--red,#e53e3e);font-size:13px;margin:8px 0 0;padding:6px 10px;background:rgba(229,62,62,.1);border-radius:6px'
+  el.textContent = msg
+  document.querySelector('.modal-box')?.appendChild(el)
+}
+
 export async function saveApiKey() {
-  const claudeKey = document.getElementById('sk_claude')?.value?.trim() || ''
+  const inputEl = document.getElementById('sk_claude')
+  const claudeKey = inputEl?.value?.trim() || ''
   const geminiKey = document.getElementById('sk_gemini')?.value?.trim() || ''
   const openaiKey = document.getElementById('sk_openai')?.value?.trim() || ''
-
-  // Validate the active provider's key
-  if (state.provider === 'claude' && claudeKey && !claudeKey.startsWith('sk-')) {
-    alert(t('Anthropic Key 格式不正确（应以 sk- 开头）', 'Invalid Anthropic API Key (should start with sk-)'))
-    return
-  }
+  // No strict format check — accept any non-empty key
 
   try {
     if (isTauri) {
@@ -242,7 +248,8 @@ export async function saveApiKey() {
     updateKeyStatusBadge()
     closeModal()
   } catch (e) {
-    alert(t('保存失败：', 'Save failed: ') + e)
+    console.error('[saveApiKey] ERROR:', e)
+    _showSettingsError(t('保存失败：', 'Save failed: ') + e)
   }
 }
 
@@ -259,7 +266,7 @@ function _requireKey() {
 const _CLAUDE_SMART = 'claude-sonnet-4-6'
 const _CLAUDE_FAST  = 'claude-haiku-4-5-20251001'
 // Tauri backend uses dated model IDs
-const _CLAUDE_SMART_ID = 'claude-sonnet-4-20250514'
+const _CLAUDE_SMART_ID = 'claude-sonnet-4-6'
 const _CLAUDE_FAST_ID  = 'claude-haiku-4-5-20251001'
 function _cm(tier) { return tier === 'fast' ? _CLAUDE_FAST : _CLAUDE_SMART }
 function _cmId(tier) { return tier === 'fast' ? _CLAUDE_FAST_ID : _CLAUDE_SMART_ID }
@@ -271,9 +278,13 @@ const _ANTHROPIC_HEADERS = () => ({
   'anthropic-dangerous-direct-browser-calls': 'true',
 })
 
-async function _webCall(system, userMsg, maxTokens, prefill = null, tier = 'smart') {
+/** Strip ```json ... ``` or ``` ... ``` wrappers a model might add. */
+function _stripJsonFences(text) {
+  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+}
+
+async function _webCall(system, userMsg, maxTokens, tier = 'smart') {
   const messages = [{ role: 'user', content: userMsg }]
-  if (prefill) messages.push({ role: 'assistant', content: prefill })
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: _ANTHROPIC_HEADERS(),
@@ -281,8 +292,7 @@ async function _webCall(system, userMsg, maxTokens, prefill = null, tier = 'smar
   })
   if (!resp.ok) throw new Error(`Anthropic API ${resp.status}: ${await resp.text()}`)
   const data = await resp.json()
-  const text = data.content[0].text
-  return prefill ? prefill + text : text
+  return data.content[0].text
 }
 
 async function _webStream(system, userMsg, maxTokens, onChunk, tier = 'smart') {
@@ -520,25 +530,32 @@ export async function claude(system, userMsg, maxTokens = 1800, tier = 'smart') 
 }
 
 // ── JSON call (provider-aware) ────────────────────────────────────────────────
-// For Claude: uses assistant prefill to force clean JSON (no markdown fences).
-// For Gemini/OpenAI: relies on the system prompt's JSON instruction.
+// Instructs the model via system prompt to return raw JSON, then strips any
+// accidental markdown fences from the response.
 
-export async function claudeJSON(system, userMsg, maxTokens = 1800, prefill = '{', tier = 'smart') {
+const _JSON_SYSTEM_SUFFIX = '\n\nIMPORTANT: Respond with raw JSON only. Do NOT wrap in markdown code fences (no ```json). Output the JSON object/array directly.'
+
+export async function claudeJSON(system, userMsg, maxTokens = 1800, _prefill = '{', tier = 'smart') {
   _requireKey()
   const p = state.provider
+  const jsonSystem = system + _JSON_SYSTEM_SUFFIX
   if (p === 'gemini') {
-    return isTauri
-      ? invoke('call_gemini', { apiKey: state.geminiKey, system, userMsg, maxTokens })
-      : _geminiCall(system, userMsg, maxTokens)
+    const raw = isTauri
+      ? await invoke('call_gemini', { apiKey: state.geminiKey, system: jsonSystem, userMsg, maxTokens })
+      : await _geminiCall(jsonSystem, userMsg, maxTokens)
+    return _stripJsonFences(raw)
   }
   if (p === 'openai') {
-    return isTauri
-      ? invoke('call_openai', { apiKey: state.openaiKey, system, userMsg, maxTokens })
-      : _openaiCall(system, userMsg, maxTokens)
+    const raw = isTauri
+      ? await invoke('call_openai', { apiKey: state.openaiKey, system: jsonSystem, userMsg, maxTokens })
+      : await _openaiCall(jsonSystem, userMsg, maxTokens)
+    return _stripJsonFences(raw)
   }
-  // Claude — keep prefill trick
-  if (!isTauri) return _webCall(system, userMsg, maxTokens, prefill, tier)
-  return await invoke('call_claude', { apiKey: state.apiKey, model: _cmId(tier), system, userMsg, maxTokens, prefill })
+  // Claude — no prefill; use system prompt + fence stripper instead
+  const raw = isTauri
+    ? await invoke('call_claude', { apiKey: state.apiKey, model: _cmId(tier), system: jsonSystem, userMsg, maxTokens })
+    : await _webCall(jsonSystem, userMsg, maxTokens, tier)
+  return _stripJsonFences(raw)
 }
 
 // ── Quiz call — always fast (Haiku): structured JSON, no deep reasoning needed ─

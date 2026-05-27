@@ -7,3 +7,5 @@ src-tauri/gen/
 nul
 .claude/
 backup/
+.DS_Store
+src-tauri/.DS_Store

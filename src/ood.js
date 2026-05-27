@@ -1448,7 +1448,7 @@ export async function oodAnalyze() {
   }
 
   const langLabel = _lang === 'python' ? 'Python' : 'Java'
-  const system = `You are a senior L5 software engineer conducting an OOD technical interview. \
+  const system = `You are a senior SDE II software engineer conducting an OOD technical interview. \
 Review the candidate's ${langLabel} solution. Be specific, constructive, and actionable. Use Markdown.`
 
   const userMsg = `## Problem: ${q.title}
@@ -1476,7 +1476,7 @@ Composition vs inheritance used correctly? Any design patterns applied or missin
 ### 4. Test Scenario Coverage
 Walk through each numbered scenario — does the current design handle it? What gaps exist?
 
-### 5. L5-Level Critique
+### 5. SDE II-Level Critique
 What would a senior engineer flag as concerns? Thread safety? Scalability? Edge cases? Extensibility?
 
 Reference specific class/method names from the code in your feedback.`

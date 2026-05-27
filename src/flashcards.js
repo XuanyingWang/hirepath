@@ -51,7 +51,7 @@ export async function generateFlashcards() {
     const digest = c.analysis
       ? c.analysis.slice(0, 3000)
       : (c.rawContent || '').slice(0, 5000)
-    const sys = `You are creating L5 SDE interview prep flashcards. Generate exactly 12 flashcards.
+    const sys = `You are creating SDE II interview prep flashcards. Generate exactly 12 flashcards.
 Mix: key term definitions (4), architectural/design concepts (4), and tradeoff or "why" questions (4).
 Return ONLY a valid JSON array — no markdown, no preamble:
 [{"front":"concise question or term (≤15 words)","back":"clear answer, 2-4 sentences with specifics"}]`

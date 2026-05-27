@@ -108,8 +108,6 @@ fn config_path(app: &AppHandle) -> PathBuf {
 // ── Tauri commands ────────────────────────────────────────────────────────────
 
 /// Call the Anthropic Claude API (non-streaming).
-/// Pass `prefill` (e.g. `"{"` or `"["`) to force the model to continue from
-/// that prefix — guarantees JSON output without markdown fences.
 #[tauri::command]
 async fn call_claude(
     api_key: String,
@@ -117,23 +115,16 @@ async fn call_claude(
     system: String,
     user_msg: String,
     max_tokens: u32,
-    prefill: Option<String>,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
 
-    let mut messages = vec![ClaudeMessage {
+    let messages = vec![ClaudeMessage {
         role: "user".to_string(),
         content: user_msg,
     }];
-    if let Some(ref pre) = prefill {
-        messages.push(ClaudeMessage {
-            role: "assistant".to_string(),
-            content: pre.clone(),
-        });
-    }
 
     let request_body = ClaudeRequest {
-        model: model.unwrap_or_else(|| "claude-sonnet-4-20250514".to_string()),
+        model: model.unwrap_or_else(|| "claude-sonnet-4-6".to_string()),
         max_tokens,
         system: make_system(system),
         messages,
@@ -174,13 +165,7 @@ async fn call_claude(
         .collect::<Vec<_>>()
         .join("");
 
-    // Prepend the prefill so callers get a complete JSON string.
-    let result = match prefill {
-        Some(pre) => pre + &text,
-        None => text,
-    };
-
-    Ok(result)
+    Ok(text)
 }
 
 /// Stream a Claude response token-by-token via a Tauri Channel.
