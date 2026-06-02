@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "SDE II Prep",
+  "productName": "HirePath",
   "version": "0.1.0",
   "identifier": "com.l5prep.app",
   "build": {
@@ -13,7 +13,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "SDE II Prep - General SDE Interview",
+        "title": "HirePath - SDE II Interview Prep",
         "width": 1280,
         "height": 860,
         "resizable": true,
@@ -34,5 +34,12 @@
       "icons/256x256.png",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["l5prep"]
+      }
+    }
   }
 }

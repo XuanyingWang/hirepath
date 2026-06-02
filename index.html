@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>L5 SDE Interview Prep</title>
+  <title>HirePath</title>
   <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
@@ -11,9 +11,17 @@
   <aside class="sidebar">
     <div class="sidebar-hd">
       <div class="lmark">🎯</div>
-      <div><div class="ltitle">L5 Prep</div><div class="lsub">Google SDE Interview</div></div>
+      <div><div class="ltitle">HirePath</div><div class="lsub">SDE II Interview Prep</div></div>
       <button class="btn-settings-icon" id="addChBtn" title="添加章节 / Add chapter">＋</button>
+      <button class="btn-settings-icon" id="themeBtn" onclick="toggleThemePanel()" title="主题设置">🌙</button>
       <button class="btn-settings-icon" id="settingsBtn" title="API Key 设置">⚙️</button>
+    </div>
+    <div class="theme-panel" id="themePanel" style="display:none">
+      <div class="theme-panel-modes">
+        <button class="theme-mode-btn" id="themeModeLight" onclick="setThemeMode('light')">☀️ 浅色</button>
+        <button class="theme-mode-btn" id="themeModeDark"  onclick="setThemeMode('dark')">🌙 深色</button>
+      </div>
+      <div class="theme-dots" id="themeDots"></div>
     </div>
     <div class="sb-body" id="sbBody"></div>
     <div id="sb-footer" class="sb-footer"></div>

@@ -2,7 +2,7 @@
 import { state, save, gch, uid, setSyncCallback } from './state.js'
 import { t, applyLangStatics } from './i18n.js'
 import { modal, confirmModal, closeModal, showLoading, showErr } from './util.js'
-import { initApiKey, showSettings, saveApiKey, switchProvider, doSignIn, doSignOut } from './api.js'
+import { initApiKey, showSettings, saveApiKey, switchProvider, doSignIn, doVerifyOtp, doSignOut } from './api.js'
 import { initAuth, onAuthChange, getUser } from './auth.js'
 import { initSync, schedulePush, pullOnStart } from './sync.js'
 import { toggleSpeech, stopSpeech } from './speech.js'
@@ -231,7 +231,8 @@ Object.assign(window, {
   showSettings, saveApiKey, switchProvider,
   setLang, renderCurrent,
   // Auth
-  doSignIn, doSignOut,
+  doSignIn, doVerifyOtp, doSignOut,
+  toggleTheme, toggleThemePanel, setThemeColor, setThemeMode,
   // Behavioral nav
   selResume, selBqPrep, setBqTab,
   renderBhResume, renderBhStories,
@@ -281,7 +282,91 @@ Object.assign(window, {
   connectResume, disconnectResume, showResumePicker, matchBullets,
 })
 
+// ── THEME ─────────────────────────────────────────────────────────────────────
+const _LIGHT_THEMES = [
+  { key: 'light-warm',   color: '#faf8f5', label: '暖白' },
+  { key: 'light-sage',   color: '#adceaf', label: '淡绿' },
+  { key: 'light-pink',   color: '#f1cbd8', label: '淡粉' },
+  { key: 'light-slate',  color: '#7fc2bc', label: '青瓷' },
+  { key: 'light-blue',   color: '#9cc6e7', label: '淡蓝' },
+  { key: 'light-purple', color: '#bcadd7', label: '淡紫' },
+]
+const _DARK_THEMES = [
+  { key: 'dark-gray',   color: '#162028', label: '深灰蓝' },
+  { key: 'dark-black',  color: '#0a0a0a', label: '纯黑' },
+  { key: 'dark-forest', color: '#0e1a12', label: '深绿' },
+  { key: 'dark-purple', color: '#130e1e', label: '深紫' },
+  { key: 'dark-choco',  color: '#2a1f1a', label: '深巧克力' },
+]
+
+function _isDark() {
+  return document.documentElement.dataset.theme?.startsWith('dark')
+}
+
+function _applyTheme(themeKey) {
+  document.documentElement.dataset.theme = themeKey === 'light-warm' ? '' : themeKey
+  const dark = themeKey.startsWith('dark')
+  const btn = document.getElementById('themeBtn')
+  if (btn) btn.textContent = dark ? '☀️' : '🌙'
+  _renderPanel(dark)
+}
+
+function _renderPanel(dark) {
+  const container = document.getElementById('themeDots')
+  if (!container) return
+  const themes = dark ? _DARK_THEMES : _LIGHT_THEMES
+  const current = document.documentElement.dataset.theme || 'light-warm'
+  container.innerHTML = themes.map(t => `
+    <button class="color-dot${current === t.key || (t.key === 'light-warm' && !current) ? ' active' : ''}"
+      style="background:${t.color}" title="${t.label}"
+      onclick="setThemeColor('${t.key}')"></button>
+  `).join('')
+  const lightBtn = document.getElementById('themeModeLight')
+  const darkBtn  = document.getElementById('themeModeDark')
+  if (lightBtn) lightBtn.classList.toggle('active', !dark)
+  if (darkBtn)  darkBtn.classList.toggle('active', dark)
+}
+
+function setThemeColor(key) {
+  const dark = key.startsWith('dark')
+  localStorage.setItem(dark ? 'l5theme-dark' : 'l5theme-light', key)
+  localStorage.setItem('l5theme-mode', dark ? 'dark' : 'light')
+  _applyTheme(key)
+}
+
+function setThemeMode(mode) {
+  localStorage.setItem('l5theme-mode', mode)
+  const saved = localStorage.getItem(`l5theme-${mode}`)
+  const key = saved || (mode === 'dark' ? 'dark-gray' : 'light-warm')
+  _applyTheme(key)
+}
+
+function toggleTheme() { toggleThemePanel() }
+
+let _panelOpen = false
+function toggleThemePanel() {
+  const panel = document.getElementById('themePanel')
+  if (!panel) return
+  _panelOpen = !_panelOpen
+  panel.style.display = _panelOpen ? 'block' : 'none'
+  if (_panelOpen) _renderPanel(_isDark())
+}
+
+function _closePanelOnOutside(e) {
+  if (_panelOpen && !e.target.closest('#themePanel') && !e.target.closest('#themeBtn')) {
+    _panelOpen = false
+    const panel = document.getElementById('themePanel')
+    if (panel) panel.style.display = 'none'
+  }
+}
+document.addEventListener('click', _closePanelOnOutside)
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
+;(function() {
+  const mode = localStorage.getItem('l5theme-mode') || 'light'
+  const saved = localStorage.getItem(`l5theme-${mode}`)
+  _applyTheme(saved || (mode === 'dark' ? 'dark-gray' : 'light-warm'))
+})()
 applyLangStatics()
 renderSB()
 renderWelcome()

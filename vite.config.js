@@ -8,6 +8,18 @@ export default defineConfig(({ mode }) => ({
     watch: {
       ignored: ['**/src-tauri/**'],
     },
+    proxy: {
+      '/api/anthropic': {
+        target: 'https://api.anthropic.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/anthropic/, ''),
+      },
+      '/api/voyage': {
+        target: 'https://api.voyageai.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/voyage/, ''),
+      },
+    },
   },
   envPrefix: ['VITE_', 'TAURI_'],
   build: {

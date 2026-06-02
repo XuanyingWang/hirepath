@@ -5,7 +5,7 @@ import { state } from './state.js'
 import { t } from './i18n.js'
 import { modal, closeModal, esc } from './util.js'
 import { supabaseConfigured } from './supabase.js'
-import { getUser, signIn, signOut } from './auth.js'
+import { getUser, signIn, signOut, verifyOtp } from './auth.js'
 
 // ── Init: load all keys + active provider ─────────────────────────────────────
 
@@ -69,10 +69,16 @@ export function showSettings(required = false) {
         </div>`
       : `<div class="settings-section">
           <div class="modal-note" style="margin-bottom:6px">${t('云同步 · 登录后数据自动备份', 'Cloud sync · sign in to back up your data')}</div>
-          <div class="auth-sign-in-row">
+          <div class="auth-sign-in-row" id="auth_email_row">
             <input class="modal-input auth-email-input" id="auth_email" type="email"
-              placeholder="${t('输入邮箱，发送登录链接', 'Enter email to receive a magic link')}">
-            <button class="btn-primary btn-sm" onclick="doSignIn()">${t('发送链接', 'Send link')}</button>
+              placeholder="${t('输入邮箱', 'Enter your email')}">
+            <button class="btn-primary btn-sm" onclick="doSignIn()">${t('发送验证码', 'Send code')}</button>
+          </div>
+          <div class="auth-sign-in-row" id="auth_otp_row" style="display:none">
+            <input class="modal-input" id="auth_otp" type="text" inputmode="numeric"
+              maxlength="8" placeholder="${t('验证码', 'OTP code')}"
+              style="letter-spacing:0.15em;font-size:1.1em;text-align:center">
+            <button class="btn-primary btn-sm" onclick="doVerifyOtp()">${t('验证', 'Verify')}</button>
           </div>
           <p id="auth_msg" class="modal-note" style="margin-top:6px;min-height:16px"></p>
         </div>`
@@ -137,6 +143,21 @@ export function showSettings(required = false) {
       </p>
     </div>
 
+    <div class="settings-section">
+      <div class="modal-note" style="margin-bottom:6px">Voyage AI Key ${t('（RAG 语义检索）', '(RAG semantic search)')}</div>
+      <div style="position:relative">
+        <input class="modal-input" id="sk_voyage" type="password"
+          placeholder="pa-..."
+          value="${esc(state.voyageKey)}"
+          style="padding-right:2.4rem">
+        <button onclick="(function(){var i=document.getElementById('sk_voyage');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈'}).call(this)"
+          style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;padding:2px 4px">👁</button>
+      </div>
+      <p class="modal-note" style="font-size:11px;opacity:.7">
+        ${t('配置后，Q&A 问答将自动检索最相关笔记作为上下文。', 'When configured, Q&A will automatically retrieve the most relevant notes as context.')}
+      </p>
+    </div>
+
     <p class="modal-note" style="margin-bottom:10px">
       ${t('所有 Key 仅保存在本地，不会上传。', 'All keys are stored locally and never uploaded.')}
     </p>
@@ -191,17 +212,40 @@ export async function doSignIn() {
     if (msg) msg.textContent = t('请输入有效的邮箱地址', 'Please enter a valid email address')
     return
   }
-  const btn = document.querySelector('.auth-sign-in-row .btn-primary')
+  const btn = document.querySelector('#auth_email_row .btn-primary')
   if (btn) { btn.disabled = true; btn.textContent = t('发送中…', 'Sending…') }
   try {
     await signIn(email)
+    document.getElementById('auth_email_row').style.display = 'none'
+    document.getElementById('auth_otp_row').style.display = ''
+    document.getElementById('auth_otp')?.focus()
     if (msg) {
       msg.style.color = 'var(--green)'
-      msg.textContent = t('✓ 登录链接已发送，请查收邮件', '✓ Magic link sent — check your inbox')
+      msg.textContent = t('✓ 验证码已发送，请查收邮件并输入6位数字', '✓ Code sent — check your email and enter the 6-digit code')
     }
   } catch (e) {
     if (msg) { msg.style.color = 'var(--red)'; msg.textContent = String(e?.message || e) }
-    if (btn) { btn.disabled = false; btn.textContent = t('发送链接', 'Send link') }
+    if (btn) { btn.disabled = false; btn.textContent = t('发送验证码', 'Send code') }
+  }
+}
+
+export async function doVerifyOtp() {
+  const email = document.getElementById('auth_email')?.value?.trim()
+  const token = document.getElementById('auth_otp')?.value?.trim()
+  const msg   = document.getElementById('auth_msg')
+  if (!token || token.length < 6) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = t('请输入验证码', 'Please enter the OTP code') }
+    return
+  }
+  const btn = document.querySelector('#auth_otp_row .btn-primary')
+  if (btn) { btn.disabled = true; btn.textContent = t('验证中…', 'Verifying…') }
+  try {
+    await verifyOtp(email, token)
+    if (msg) { msg.style.color = 'var(--green)'; msg.textContent = t('✓ 登录成功', '✓ Signed in') }
+    setTimeout(() => closeModal(), 800)
+  } catch (e) {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = String(e?.message || e) }
+    if (btn) { btn.disabled = false; btn.textContent = t('验证', 'Verify') }
   }
 }
 
@@ -226,6 +270,7 @@ export async function saveApiKey() {
   const claudeKey = inputEl?.value?.trim() || ''
   const geminiKey = document.getElementById('sk_gemini')?.value?.trim() || ''
   const openaiKey = document.getElementById('sk_openai')?.value?.trim() || ''
+  const voyageKey = document.getElementById('sk_voyage')?.value?.trim() || ''
   // No strict format check — accept any non-empty key
 
   try {
@@ -242,9 +287,11 @@ export async function saveApiKey() {
       localStorage.setItem('l5_openai_key', openaiKey)
       localStorage.setItem('l5provider', state.provider)
     }
+    localStorage.setItem('l5_voyage_key', voyageKey)
     if (claudeKey) state.apiKey = claudeKey
     state.geminiKey = geminiKey
     state.openaiKey = openaiKey
+    state.voyageKey = voyageKey
     updateKeyStatusBadge()
     closeModal()
   } catch (e) {
@@ -271,11 +318,13 @@ const _CLAUDE_FAST_ID  = 'claude-haiku-4-5-20251001'
 function _cm(tier) { return tier === 'fast' ? _CLAUDE_FAST : _CLAUDE_SMART }
 function _cmId(tier) { return tier === 'fast' ? _CLAUDE_FAST_ID : _CLAUDE_SMART_ID }
 
+const _ANTHROPIC_BASE = isTauri ? 'https://api.anthropic.com' : '/api/anthropic'
+
 const _ANTHROPIC_HEADERS = () => ({
   'Content-Type': 'application/json',
   'x-api-key': state.apiKey,
   'anthropic-version': '2023-06-01',
-  'anthropic-dangerous-direct-browser-calls': 'true',
+  'anthropic-dangerous-direct-browser-access': 'true',
 })
 
 /** Strip ```json ... ``` or ``` ... ``` wrappers a model might add. */
@@ -285,7 +334,7 @@ function _stripJsonFences(text) {
 
 async function _webCall(system, userMsg, maxTokens, tier = 'smart') {
   const messages = [{ role: 'user', content: userMsg }]
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const resp = await fetch(`${_ANTHROPIC_BASE}/v1/messages`, {
     method: 'POST',
     headers: _ANTHROPIC_HEADERS(),
     body: JSON.stringify({ model: _cm(tier), max_tokens: maxTokens, system, messages }),
@@ -296,7 +345,7 @@ async function _webCall(system, userMsg, maxTokens, tier = 'smart') {
 }
 
 async function _webStream(system, userMsg, maxTokens, onChunk, tier = 'smart') {
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const resp = await fetch(`${_ANTHROPIC_BASE}/v1/messages`, {
     method: 'POST',
     headers: _ANTHROPIC_HEADERS(),
     body: JSON.stringify({ model: _cm(tier), max_tokens: maxTokens, system,
@@ -499,7 +548,7 @@ export async function claudeVisionBatch(system, textPrompt, images, maxTokens = 
     source: { type: 'base64', media_type: img.mediaType, data: img.base64 },
   }))
   content.push({ type: 'text', text: textPrompt })
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const resp = await fetch(`${_ANTHROPIC_BASE}/v1/messages`, {
     method: 'POST',
     headers: _ANTHROPIC_HEADERS(),
     body: JSON.stringify({ model: _cm(tier), max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),

@@ -29,12 +29,17 @@ export async function initAuth() {
   // Hook deep-link callback (desktop) or URL callback (web)
   if (isTauri) {
     try {
-      const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link')
+      const { onOpenUrl, getCurrent } = await import('@tauri-apps/plugin-deep-link')
+      // App already running — incoming deep link
       await onOpenUrl(async (urls) => {
         for (const url of urls) await _handleCallback(url)
       })
+      // App launched via deep link — handle the launch URL
+      const initial = await getCurrent()
+      if (initial) {
+        for (const url of initial) await _handleCallback(url)
+      }
     } catch (e) {
-      // Plugin not yet installed — auth still works once plugin is added
       console.warn('deep-link plugin not available:', e)
     }
   } else {
@@ -44,6 +49,12 @@ export async function initAuth() {
       await _handleCallback(href)
     }
   }
+}
+
+/** Verify a 6-digit OTP code. Throws on error. */
+export async function verifyOtp(email, token) {
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+  if (error) throw error
 }
 
 /** Send a magic-link email. Throws on error. */

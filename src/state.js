@@ -70,6 +70,7 @@ export const state = {
   apiKey: '',
   geminiKey: '',
   openaiKey: '',
+  voyageKey: localStorage.getItem('l5_voyage_key') || '',
   provider: localStorage.getItem('l5provider') || 'claude', // 'claude' | 'gemini' | 'openai'
   lang: localStorage.getItem('l5lang') || 'zh',
   // Flashcard session state (ephemeral — not persisted)

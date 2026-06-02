@@ -5,6 +5,7 @@ import { esc, md2h, showLoading, showErr } from './util.js'
 import { buildAnalysis } from './analysis.js'
 import { claudeStream } from './api.js'
 import { getBh } from './behavioral/shared.js'
+import { indexChapter, retrieveContext } from './rag.js'
 
 // ── Module-level ephemeral state ───────────────────────────────────────────────
 let _qaOpen = false          // Q&A panel visible?
@@ -212,6 +213,7 @@ export async function rebuildKnowledge() {
   try {
     c.analysis = await buildAnalysis(c.name, c.url, c.rawContent || '')
     save()
+    indexChapter(c.id, c.analysis)
     renderKnowledge()
   } catch (err) { showErr(err?.message || String(err)) }
 }
@@ -292,13 +294,15 @@ async function _doChQuestion(cid, q) {
   const history = c.qaHistory || []
   const convHistory = history.slice(-6).map(e => `User: ${e.q}\nAssistant: ${e.a}`).join('\n\n')
 
+  const ragCtx = await retrieveContext(q)
+
   const sys = `You are an SDE II interview coach. The candidate will ask you a question. Synthesize their overall experience holistically and answer directly in 3-5 concise bullet points. Never iterate through individual bullets or repeat context.
 
 Candidate's overall experience:
 ${profileCtx}
 
 Topic being studied — "${c.name}":
-${topicCtx}`
+${topicCtx}${ragCtx ? `\n\nRelevant notes retrieved from knowledge base:\n${ragCtx}` : ''}`
 
   const userMsg = convHistory
     ? `Conversation so far:\n${convHistory}\n\nFollow-up question: ${q}`
