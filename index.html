@@ -10,7 +10,19 @@
 <div class="app">
   <aside class="sidebar">
     <div class="sidebar-hd">
-      <div class="lmark">🎯</div>
+      <div class="lmark">
+        <svg width="20" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- H: left & right verticals, crossbar is a rising zigzag -->
+          <line x1="1.5" y1="3" x2="1.5" y2="17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <line x1="8.5" y1="3" x2="8.5" y2="17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <polyline points="1.5,13 4,9 6,11 8.5,7"
+                    stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- P: spine + bowl -->
+          <line x1="12" y1="3" x2="12" y2="17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 3 L17 3 Q20 3 20 6.5 Q20 10 17 10 L12 10"
+                stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
       <div><div class="ltitle">HirePath</div><div class="lsub">SDE II Interview Prep</div></div>
       <button class="btn-settings-icon" id="addChBtn" title="添加章节 / Add chapter">＋</button>
       <button class="btn-settings-icon" id="themeBtn" onclick="toggleThemePanel()" title="主题设置">🌙</button>

@@ -53,15 +53,19 @@ export function renderSB() {
     <div class="dir-hd" style="margin-top:8px"><span>${t('练习区', 'Practice Area')}</span></div>
     <div class="ch-item${state.activeCid === '__ood__' ? ' active' : ''}" data-cid="__ood__" onclick="selOod()">
       <span class="ch-dot" style="background:#22d3ee"></span>
-      <span class="ch-label">🏗️ ${t('OOD 设计', 'OOD Design')}</span>
+      <span class="ch-label">🧱 ${t('OOD 设计', 'OOD Design')}</span>
     </div>
     <div class="ch-item${state.activeCid === '__patterns__' ? ' active' : ''}" data-cid="__patterns__" onclick="selPatterns()">
       <span class="ch-dot" style="background:#f59e0b"></span>
       <span class="ch-label">🧩 ${t('LeetCode 模式', 'LeetCode Patterns')}</span>
     </div>
-    <div class="ch-item ch-item-soon" data-cid="__sysdesign__">
-      <span class="ch-dot" style="background:#444"></span>
-      <span class="ch-label">🖥️ ${t('系统设计', 'System Design')} <span class="ch-soon-badge">${t('即将推出', 'Soon')}</span></span>
+    <div class="ch-item${state.activeCid === '__prodcode__' ? ' active' : ''}" data-cid="__prodcode__" onclick="selProdCode()">
+      <span class="ch-dot" style="background:#10b981"></span>
+      <span class="ch-label">🖥️ ${t('Production 设计', 'Production Design')}</span>
+    </div>
+    <div class="ch-item${state.activeCid === '__sysdesign__' ? ' active' : ''}" data-cid="__sysdesign__" onclick="selSysDesign()">
+      <span class="ch-dot" style="background:#3b82f6"></span>
+      <span class="ch-label">🌐 ${t('系统设计', 'System Design')}</span>
     </div>
     <div class="dir-hd" style="margin-top:8px"><span>${t('总览', 'Overview')}</span></div>
     <div class="ch-item${state.activeCid === '__dashboard__' ? ' active' : ''}" data-cid="__dashboard__" onclick="selDashboard()">
@@ -142,7 +146,7 @@ export function initSBDrag() {
     const item = e.target.closest('.ch-item')
     if (!item) return
     const cid = item.dataset.cid
-    if (!cid || cid === '__behavioral__' || cid === '__resume__' || cid === '__bqprep__' || cid === '__jobprep__' || cid === '__dashboard__' || cid === '__aggregator__' || cid === '__ood__' || cid === '__patterns__' || cid === '__sysdesign__') return
+    if (!cid || cid === '__behavioral__' || cid === '__resume__' || cid === '__bqprep__' || cid === '__jobprep__' || cid === '__dashboard__' || cid === '__aggregator__' || cid === '__ood__' || cid === '__patterns__' || cid === '__prodcode__' || cid === '__sysdesign__' ) return
     state.dragState = { cid, startX: e.clientX, startY: e.clientY, active: false, ghost: null, item }
     document.addEventListener('pointermove', sbDragMove, { passive: false })
     document.addEventListener('pointerup', sbDragEnd)
@@ -199,7 +203,7 @@ export function sbDragEnd() {
   document.querySelectorAll('.drop-above,.drop-below,.drop-target').forEach(el =>
     el.classList.remove('drop-above', 'drop-below', 'drop-target'))
   if (!ds.active) return
-  if (targetId && targetId !== ds.cid && !['__behavioral__', '__resume__', '__bqprep__', '__jobprep__', '__dashboard__', '__aggregator__', '__ood__', '__patterns__', '__sysdesign__'].includes(targetId)) {
+  if (targetId && targetId !== ds.cid && !['__behavioral__', '__resume__', '__bqprep__', '__jobprep__', '__dashboard__', '__aggregator__', '__ood__', '__patterns__', '__prodcode__', '__sysdesign__' ].includes(targetId)) {
     const srcIdx = state.S.chapters.findIndex(c => c.id === ds.cid)
     const [src] = state.S.chapters.splice(srcIdx, 1)
     const tgtIdx = state.S.chapters.findIndex(c => c.id === targetId)

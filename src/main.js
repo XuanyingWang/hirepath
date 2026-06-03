@@ -27,6 +27,8 @@ import { renderJobPrep, openCompanyView, closeCompanyView, openPostingDetail, ad
 import { renderAggregator, aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf } from './aggregator.js'
 import { renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze } from './ood.js'
 import { renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate, togglePatternRefine, patternRefine } from './patterns.js'
+import { renderProdCode, openProdCodeQ, prodCodeBackToList, prodCodeSwitchLang, prodCodeInput, prodCodeAnalyze } from './prodcode.js'
+import { renderSysDesign, openSysDesignQ, sysDesignBackToList, sdInput, sdAnalyze } from './sysdesign.js'
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 
@@ -95,6 +97,20 @@ function selPatterns() {
   renderPatterns()
 }
 
+function selProdCode() {
+  state.activeCid = '__prodcode__'
+  renderSB()
+  document.getElementById('topbar').style.display = 'none'
+  renderProdCode()
+}
+
+function selSysDesign() {
+  state.activeCid = '__sysdesign__'
+  renderSB()
+  document.getElementById('topbar').style.display = 'none'
+  renderSysDesign()
+}
+
 
 function setLang(l) {
   state.lang = l; localStorage.setItem('l5lang', l)
@@ -126,6 +142,12 @@ function renderCurrent() {
   } else if (state.activeCid === '__patterns__') {
     document.getElementById('topbar').style.display = 'none'
     renderPatterns()
+  } else if (state.activeCid === '__prodcode__') {
+    document.getElementById('topbar').style.display = 'none'
+    renderProdCode()
+  } else if (state.activeCid === '__sysdesign__') {
+    document.getElementById('topbar').style.display = 'none'
+    renderSysDesign()
   } else if (state.activeCid && gch()) {
     document.getElementById('topbar').style.display = 'flex'
     document.getElementById('topbarTitle').textContent = gch().name
@@ -275,6 +297,10 @@ Object.assign(window, {
   // LeetCode Patterns
   selPatterns, renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate,
   togglePatternRefine, patternRefine,
+  // Production Code Design
+  selProdCode, renderProdCode, openProdCodeQ, prodCodeBackToList, prodCodeSwitchLang, prodCodeInput, prodCodeAnalyze,
+  // System Design
+  selSysDesign, renderSysDesign, openSysDesignQ, sysDesignBackToList, sdInput, sdAnalyze,
   // Job Prep
   selJobPrep, renderJobPrep,
   openCompanyView, closeCompanyView, openPostingDetail,

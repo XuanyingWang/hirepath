@@ -882,7 +882,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .btn-sm{padding:5px 10px;font-size:12px}
 
 /* ── OOD Design Practice ──────────────────────────────────────────────────── */
-.ood-wrap{max-width:1100px;margin:0 auto;padding:24px 24px 48px}
+.ood-wrap{width:100%;box-sizing:border-box;padding:24px 24px 48px}
 /* List view */
 .ood-list-hd{margin-bottom:18px}
 .ood-list-hd h2{font-size:19px;font-weight:700;margin:0 0 4px}
@@ -913,16 +913,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .ood-lang-tab.active{background:#7c3aed22;color:#a855f7;font-weight:600}
 .ood-lang-tab:hover:not(.active){background:var(--surface2,#333);color:var(--text)}
 /* Editor layout */
-.ood-editor-layout{display:grid;grid-template-columns:1fr 340px;gap:14px;height:calc(100vh - 180px);min-height:500px}
+.ood-editor-layout{display:flex;gap:0;height:calc(100vh - 180px);min-height:500px}
+.ood-divider{flex:0 0 9px;cursor:col-resize;display:flex;align-items:center;justify-content:center}
+.ood-divider::after{content:'';width:3px;height:32px;background:var(--border2,var(--border));border-radius:2px;transition:background .15s,height .15s}
+.ood-divider:hover::after,.ood-divider.dragging::after{background:var(--accent);height:56px}
 /* Code pane */
-.ood-pane-code{display:flex;flex-direction:column;min-height:0}
+.ood-pane-code{flex:1 1 0;min-width:260px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 .ood-code-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#1a1a2e;border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;font-size:11px}
 .ood-code-file{color:#a78bfa;font-weight:600;font-family:monospace}
 .ood-code-hint{color:var(--muted2,#555)}
 .ood-textarea{flex:1;width:100%;box-sizing:border-box;padding:14px;background:#0d0d0d;border:1px solid var(--border);border-radius:0 0 8px 8px;color:#d4d4d4;font-family:'Fira Code','Consolas','Courier New',monospace;font-size:13px;line-height:1.65;resize:none;outline:none;tab-size:4;white-space:pre;overflow-wrap:normal;overflow-x:auto}
 .ood-textarea:focus{border-color:#7c3aed}
 /* Side panel */
-.ood-pane-side{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
+.ood-pane-side{flex:0 0 340px;min-width:180px;display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
 .ood-scenarios-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;flex-shrink:0}
 .ood-scenarios-hd{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
 .ood-scenario-list{margin:0;padding-left:18px;font-size:12.5px;color:var(--text);line-height:1.7}
@@ -1067,3 +1070,16 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .refine-textarea{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);background:var(--bg);color:var(--text);resize:vertical;min-height:72px;line-height:1.65;margin-bottom:10px}
 .refine-textarea:focus{outline:none;border-color:var(--accent)}
 .refine-actions{display:flex;gap:8px}
+/* ── System Design ── */
+.sd-sections-pane{overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px}
+.sd-section{display:flex;flex-direction:column;gap:4px}
+.sd-section-hd{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.sd-section-num{font-size:11px;font-weight:700;color:var(--muted2);font-variant-numeric:tabular-nums;min-width:18px}
+.sd-section-label{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.sd-section-tip{font-size:11px;color:var(--muted2);line-height:1.4}
+.sd-textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.7;resize:vertical;min-height:88px;outline:none;transition:border-color .15s}
+.sd-textarea:focus{border-color:var(--accent)}
+.sd-textarea::placeholder{opacity:.75}
+.sd-textarea::placeholder{color:var(--muted2);opacity:.45}
+.sd-topics{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.sd-topic-chip{font-size:11px;padding:2px 8px;border-radius:12px;background:var(--surface3,var(--surface2));border:1px solid var(--border2);color:var(--text2)}

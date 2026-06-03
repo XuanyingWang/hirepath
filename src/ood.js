@@ -1,11 +1,13 @@
 // ── OOD DESIGN PRACTICE ───────────────────────────────────────────────────────
+import { state } from './state.js'
 import { t } from './i18n.js'
 import { esc, md2h, showErr } from './util.js'
 import { claude, claudeStream } from './api.js'
+import { initPaneDrag } from './panedrag.js'
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let _currentQ = null   // question id | null = list view
-let _lang = 'python'   // 'python' | 'java'
+let _lang = 'java'     // 'python' | 'java'
 let _code = {}         // { 'qid:lang': string }
 let _analysis = {}     // { qid: string }
 let _streaming = false
@@ -1314,7 +1316,7 @@ export function renderOod() {
   document.getElementById('mainContent').innerHTML = `
     <div class="ood-wrap">
       <div class="ood-list-hd">
-        <h2>🏗️ ${t('OOD 设计练习', 'OOD Design Practice')}</h2>
+        <h2>🧱 ${t('OOD 设计练习', 'OOD Design Practice')}</h2>
         <p>${t('10 道经典面试题 · 写出设计方案，然后让 AI 深度评审', '10 classic interview questions · Write your solution, then get AI code review')}</p>
       </div>
       <div class="ood-q-list">
@@ -1362,7 +1364,7 @@ function _renderQuestion() {
         </div>
       </div>
       <div class="ood-editor-layout">
-        <div class="ood-pane-code">
+        <div class="ood-pane-code" id="oodPaneCode">
           <div class="ood-code-hd">
             <span class="ood-code-file">${q.id}.${ext}</span>
             <span class="ood-code-hint">Tab = 4 spaces &nbsp;·&nbsp; Ctrl+Enter = Analyze</span>
@@ -1372,7 +1374,8 @@ function _renderQuestion() {
             oninput="oodCodeInput()"
             placeholder="${t('在此编写面向对象设计方案…', 'Write your OOD solution here…')}">${esc(code)}</textarea>
         </div>
-        <div class="ood-pane-side">
+        <div class="ood-divider" id="oodDivider"></div>
+        <div class="ood-pane-side" id="oodPaneSide">
           <div class="ood-scenarios-box">
             <div class="ood-scenarios-hd">📋 ${t('测试场景', 'Test Scenarios')}</div>
             <ol class="ood-scenario-list">
@@ -1390,6 +1393,8 @@ function _renderQuestion() {
         </div>
       </div>
     </div>`
+
+  initPaneDrag()
 
   // Wire Tab key and Ctrl+Enter imperatively (can't use inline onkeydown for Tab)
   const ta = document.getElementById('oodCode')
@@ -1448,8 +1453,10 @@ export async function oodAnalyze() {
   }
 
   const langLabel = _lang === 'python' ? 'Python' : 'Java'
+  const replyLang = state.lang === 'en' ? 'English' : '中文'
   const system = `You are a senior SDE II software engineer conducting an OOD technical interview. \
-Review the candidate's ${langLabel} solution. Be specific, constructive, and actionable. Use Markdown.`
+Review the candidate's ${langLabel} solution. Be specific, constructive, and actionable. Use Markdown. \
+Reply in ${replyLang}.`
 
   const userMsg = `## Problem: ${q.title}
 ${q.desc}
