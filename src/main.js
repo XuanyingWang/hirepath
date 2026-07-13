@@ -25,8 +25,9 @@ import { renderBhStories, newStory, editStory, cancelEditStory, deleteStory, sav
 import { renderBqPrep, openBqDetail, closeBqDetail, addBq, saveBq, deleteBq, linkStory, unlinkStory, showStoryPicker, tuneBqAnswer } from './behavioral/bqstore.js'
 import { renderJobPrep, openCompanyView, closeCompanyView, openPostingDetail, addJobPosting, submitJobPosting, deletePosting, connectResume, disconnectResume, showResumePicker, matchBullets } from './jobprep.js'
 import { renderAggregator, aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf } from './aggregator.js'
-import { renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze } from './ood.js'
+import { renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze, oodRun } from './ood.js'
 import { renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate, togglePatternRefine, patternRefine } from './patterns.js'
+import { prodCodeRun } from './prodcode.js'
 import { renderProdCode, openProdCodeQ, prodCodeBackToList, prodCodeSwitchLang, prodCodeInput, prodCodeAnalyze } from './prodcode.js'
 import { renderSysDesign, openSysDesignQ, sysDesignBackToList, sdInput, sdAnalyze } from './sysdesign.js'
 
@@ -293,12 +294,12 @@ Object.assign(window, {
   selAggregator, renderAggregator,
   aggrPickFolder, aggrPickFiles, aggrCancel, aggrClear, aggrExportPdf,
   // OOD Practice
-  selOod, renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze,
+  selOod, renderOod, openOodQ, oodBackToList, oodSwitchLang, oodCodeInput, oodAnalyze, oodRun,
   // LeetCode Patterns
   selPatterns, renderPatterns, patternOpen, patternBackToList, patternNew, patternSaveMeta, patternDelete, patternGenerate,
   togglePatternRefine, patternRefine,
   // Production Code Design
-  selProdCode, renderProdCode, openProdCodeQ, prodCodeBackToList, prodCodeSwitchLang, prodCodeInput, prodCodeAnalyze,
+  selProdCode, renderProdCode, openProdCodeQ, prodCodeBackToList, prodCodeSwitchLang, prodCodeInput, prodCodeAnalyze, prodCodeRun,
   // System Design
   selSysDesign, renderSysDesign, openSysDesignQ, sysDesignBackToList, sdInput, sdAnalyze,
   // Job Prep

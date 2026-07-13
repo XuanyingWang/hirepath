@@ -4,6 +4,8 @@ import { t } from './i18n.js'
 import { esc, md2h } from './util.js'
 import { claudeStream } from './api.js'
 import { initPaneDrag } from './panedrag.js'
+import { createEditor, getEditorValue, setEditorValue, disposeEditor, addEditorAction, monaco } from './codeeditor.js'
+import { runCode } from './coderunner.js'
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let _currentQ = null   // question id | null = list view
@@ -20,6 +22,7 @@ const QUESTIONS = [
     title: 'Rate Limiter — Token Bucket',
     difficulty: 'medium',
     desc: 'Implement a token-bucket rate limiter. Tokens accumulate at a fixed rate up to a burst capacity; each request consumes one token.',
+    background: 'You are building a rate-limiting layer for an API gateway. Each client gets its own token bucket that refills at a fixed rate (e.g. 10 tokens/sec). Incoming requests consume one token; if the bucket is empty the request is rejected. Implement TokenBucket (per-client state) and RateLimiter (manages all client buckets by ID). Focus on thread safety and correct time-based refill logic.',
     scenarios: [
       'Client makes 5 requests/sec within the 10 req/sec limit — all allowed',
       'Client bursts 15 requests at once against a 10 req/sec limit — first 10 allowed, rest rejected',
@@ -116,6 +119,7 @@ public class RateLimiter {
     title: 'Rate Limiter — Leaky Bucket',
     difficulty: 'medium',
     desc: 'Implement a leaky-bucket rate limiter. Requests queue in a fixed-capacity bucket and are drained at a constant rate, smoothing out bursts.',
+    background: 'An alternative to token bucket: instead of allowing bursts, the leaky bucket enforces a perfectly steady output rate. Requests enter a fixed-capacity queue and are "drained" at a constant rate (e.g. 5 req/sec). If the queue is full, new requests are immediately rejected. Implement LeakyBucket (per-client) and LeakyBucketLimiter. Compare your approach with token bucket — when is each algorithm preferable?',
     scenarios: [
       'Drain rate 5 req/s, capacity 10; 8 requests arrive instantly — all enqueued, drained steadily',
       'Bucket full (10 queued); new request arrives — rejected immediately with no queuing',
@@ -232,6 +236,7 @@ public class LeakyBucketLimiter {
     title: 'LRU Cache',
     difficulty: 'medium',
     desc: 'Implement an LRU (Least Recently Used) cache with O(1) get and put, optional TTL expiry, and thread safety.',
+    background: 'Your team needs an in-memory cache for expensive database queries. When the cache reaches capacity, evict the Least Recently Used entry. A read counts as "use", so it resets the eviction clock. Design LRUCache with O(1) get and put using a doubly-linked list + hash map. Bonus: add optional per-entry TTL so stale entries auto-expire. Ensure thread-safe access for a multi-threaded server.',
     scenarios: [
       'Cache has capacity 3; put A, B, C then get A — A is now most-recent, B is LRU',
       'Put a 4th item D — B (LRU) is evicted, not A',
@@ -333,84 +338,97 @@ public class LRUCache<K, V> {
     icon: '📡',
     title: 'Event Emitter',
     difficulty: 'easy',
-    desc: 'Build a publish-subscribe event bus supporting named events, multiple listeners, one-time subscriptions, and wildcard matching.',
+    desc: 'Implement a lightweight event bus: subscribe to named events, unsubscribe, fire events to all listeners, and support one-time subscriptions.',
+    background: 'You are building a lightweight event system used inside a UI framework or service bus. Components can subscribe to named events (e.g. "user:login"), be notified when those events fire, and unsubscribe when they are destroyed. Implement the four core methods: on(), off(), emit(), and once(). Scope: exact event names only (no wildcards). Focus on correctness, chaining, and making sure a crashing listener never blocks others.',
     scenarios: [
-      'Two listeners registered for "user.login"; event fired — both called',
-      'Listener registered with once(); event fires twice — listener called only on first fire',
-      'off() called before event fires — listener not invoked',
-      'Wildcard listener for "user.*" fires on "user.login" and "user.logout"',
-      'Listener throws an error — other listeners for the same event still run',
+      'Two listeners on "click"; emit("click") — both handlers called in registration order',
+      'once() listener: event emits twice — handler invoked only on the first emit',
+      'off() removes a listener before emit — removed handler is never called',
+      'A listener throws inside emit — remaining listeners still run; exception is swallowed',
+      'emit() returns the count of listeners that were invoked',
     ],
-    py: `import fnmatch
-import threading
+    py: `import threading
 from collections import defaultdict
 from typing import Callable, Any
 
 class EventEmitter:
     def __init__(self):
-        # event_name -> list of (handler, once)
-        self._listeners: dict[str, list[tuple[Callable, bool]]] = defaultdict(list)
+        # event -> list of [handler, is_once]
+        self._listeners: dict[str, list[list]] = defaultdict(list)
         self._lock = threading.Lock()
 
     def on(self, event: str, handler: Callable) -> 'EventEmitter':
-        pass  # TODO: register persistent listener; return self for chaining
+        """Subscribe handler to event. Returns self for chaining."""
+        pass  # TODO: append [handler, False] under event key
 
     def once(self, event: str, handler: Callable) -> 'EventEmitter':
-        pass  # TODO: register one-time listener; return self
+        """Subscribe handler to fire only on the FIRST emit."""
+        pass  # TODO: append [handler, True] under event key
 
     def off(self, event: str, handler: Callable) -> 'EventEmitter':
-        pass  # TODO: remove all registrations of handler for event; return self
+        """Unsubscribe all registrations of handler from event."""
+        pass  # TODO: remove entries whose handler matches
 
-    def emit(self, event: str, *args: Any, **kwargs: Any) -> int:
+    def emit(self, event: str, *args: Any) -> int:
         """
-        Fire all listeners matching event (including wildcards).
-        Remove once-listeners after calling.
-        Returns the number of listeners called.
-        Exceptions in listeners are swallowed so other listeners still run.
+        Call all listeners registered for event.
+        - Remove once-listeners after invocation.
+        - Swallow exceptions so other listeners still run.
+        - Return count of listeners invoked.
         """
         pass  # TODO
 
     def listener_count(self, event: str) -> int:
-        pass  # TODO: count exact-match + wildcard listeners`,
+        with self._lock:
+            return len(self._listeners.get(event, []))`,
     java: `import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
-public class EventEmitter<T> {
-    private record Entry<T>(Consumer<T> handler, boolean once) {}
+public class EventEmitter {
 
-    private final ConcurrentHashMap<String, CopyOnWriteArrayList<Entry<T>>> listeners
+    private static class Entry {
+        final Consumer<Object[]> handler;
+        final boolean once;
+        Entry(Consumer<Object[]> h, boolean once) { this.handler = h; this.once = once; }
+    }
+
+    private final ConcurrentHashMap<String, CopyOnWriteArrayList<Entry>> listeners
         = new ConcurrentHashMap<>();
 
-    public EventEmitter<T> on(String event, Consumer<T> handler) {
-        // TODO: add persistent entry
+    /** Subscribe handler to event. Returns this for chaining. */
+    public EventEmitter on(String event, Consumer<Object[]> handler) {
+        // TODO: add Entry(handler, false) to the list for event
         return this;
     }
 
-    public EventEmitter<T> once(String event, Consumer<T> handler) {
-        // TODO: add once=true entry
+    /** Subscribe handler to fire only on the FIRST emit. */
+    public EventEmitter once(String event, Consumer<Object[]> handler) {
+        // TODO: add Entry(handler, true)
         return this;
     }
 
-    public EventEmitter<T> off(String event, Consumer<T> handler) {
-        // TODO: remove all matching entries for this handler
+    /** Unsubscribe all registrations of handler from event. */
+    public EventEmitter off(String event, Consumer<Object[]> handler) {
+        // TODO: remove entries whose handler reference equals the given handler
         return this;
     }
 
-    public int emit(String event, T payload) {
-        // TODO: call all matching listeners (exact + wildcard),
-        //       remove once-listeners, swallow exceptions, return count
+    /**
+     * Fire all listeners for event.
+     * - Remove once-entries after invoking.
+     * - Swallow exceptions so other listeners still run.
+     * - Return count of listeners invoked.
+     */
+    public int emit(String event, Object... args) {
+        // TODO
         return 0;
-    }
-
-    private boolean matches(String pattern, String event) {
-        // TODO: support "user.*" wildcard matching
-        return pattern.equals(event);
     }
 
     public int listenerCount(String event) {
-        // TODO: count exact + wildcard listeners
-        return 0;
+        CopyOnWriteArrayList<Entry> list = listeners.get(event);
+        return list == null ? 0 : list.size();
     }
 }`,
   },
@@ -421,6 +439,7 @@ public class EventEmitter<T> {
     title: 'Retry with Backoff',
     difficulty: 'easy',
     desc: 'Implement a configurable retry decorator/utility with exponential backoff, jitter, max attempts, and selective exception handling.',
+    background: 'External services (HTTP APIs, databases) fail transiently. Rather than crashing on the first error, your service should retry with increasing delays to avoid flooding a struggling downstream. Implement a retry utility (decorator or wrapper function) with: configurable max attempts, exponential backoff (delay doubles each try), optional jitter (±% randomness to prevent thundering herd), and a whitelist of retryable exception types. Non-retryable errors (e.g. auth failures) must bubble up immediately.',
     scenarios: [
       'Operation fails twice then succeeds — returned value from 3rd attempt',
       'All attempts exhausted — last exception re-raised to caller',
@@ -525,6 +544,7 @@ public class Retry {
     title: 'Circuit Breaker',
     difficulty: 'medium',
     desc: 'Implement the circuit-breaker pattern to detect downstream failures, trip open, and allow gradual recovery.',
+    background: 'A microservice calls a downstream payment API that occasionally goes down. Without protection, a flood of failing calls can exhaust thread pools and bring down the caller too. The circuit breaker sits between caller and dependency: CLOSED (passing through), OPEN (immediately rejecting calls), and HALF-OPEN (allowing one probe to test recovery). Implement the three-state machine with a configurable failure-rate threshold, rolling window, and half-open timeout.',
     scenarios: [
       'Circuit CLOSED; 5 of the last 10 calls fail (50%) — circuit trips to OPEN',
       'Circuit OPEN; new call arrives — immediately rejected with CircuitOpenError',
@@ -645,6 +665,7 @@ public class CircuitBreaker {
     title: 'Task Scheduler',
     difficulty: 'medium',
     desc: 'Build an in-process task scheduler that runs callables after a delay or on a fixed interval, with cancellation support.',
+    background: 'Your application needs to run background jobs: send a reminder email 2 hours from now, flush a metrics buffer every 30 seconds, clean up expired sessions nightly. Implement an in-process TaskScheduler with schedule(fn, delaySeconds) for one-shot tasks and scheduleInterval(fn, intervalSeconds) for recurring ones. Tasks must be cancellable by a returned task ID. If a task throws, the scheduler should log and continue — it must never crash.',
     scenarios: [
       'schedule(fn, delay=2) — fn runs once after 2 seconds',
       'schedule_interval(fn, interval=5) — fn runs every 5 seconds until cancelled',
@@ -739,6 +760,7 @@ public class TaskScheduler {
     title: 'Connection Pool',
     difficulty: 'hard',
     desc: 'Implement a generic connection pool that manages reusable connections with health checks, max-size limits, and idle timeout eviction.',
+    background: 'Opening a new database or network connection is expensive (TCP handshake, auth, TLS). A connection pool reuses a fixed number of live connections instead. Callers borrow a connection, use it, then return it. Implement ConnectionPool with: max pool size (block callers when exhausted), idle timeout eviction (release stale connections), optional health check before lending, and graceful shutdown. This is a classic hard interview question — focus on the blocking borrow() and thread safety first.',
     scenarios: [
       'Pool size 5; 5 concurrent borrows succeed; 6th caller blocks until one is returned',
       'Connection returned to pool — immediately lent to the waiting caller',
@@ -880,6 +902,7 @@ public class ConnectionPool<T extends AutoCloseable> {
     title: 'Feature Flag System',
     difficulty: 'medium',
     desc: 'Build a feature flag service supporting boolean toggles, percentage rollouts, user allowlists, and change listeners.',
+    background: 'Your team ships features behind flags so they can be toggled without redeployment. Implement FeatureFlagService that manages flags with: simple on/off (global toggle), percentage rollout (e.g. 20% of users see the new checkout), and a user allowlist (specific users always get it regardless of rollout). Key requirement: the same user must always get the same result (deterministic hashing). Also support change listeners so other components react when a flag updates.',
     scenarios: [
       'Flag "dark_mode" is globally ON — is_enabled("dark_mode", user) returns True for everyone',
       'Flag "new_checkout" rolled out to 20% — roughly 1/5 user IDs get True, deterministically',
@@ -990,6 +1013,7 @@ public class FeatureFlagService {
     title: 'Observable / Reactive Stream',
     difficulty: 'hard',
     desc: 'Implement a minimal reactive stream (Observable + Observer) with map, filter, and take operators, similar to RxJS/RxJava.',
+    background: 'Reactive streams let you compose asynchronous data pipelines declaratively. You are building a minimal Observable (like RxJS) from scratch. An Observable wraps a producer function; subscribers receive values via onNext, onError, and onComplete. Implement the three core operators — map (transform values), filter (drop values), and take (complete after N items) — using operator composition: each returns a NEW Observable that wraps the previous one. Start simple with synchronous Observable.of(...) before tackling async producers.',
     scenarios: [
       'observable.subscribe(observer) — observer.next() called for each emitted value',
       '.map(fn) transforms each value before delivery to subscriber',
@@ -1107,15 +1131,21 @@ function _getQ(id) { return QUESTIONS.find(q => q.id === id) }
 
 function _skeleton(q) { return _lang === 'python' ? q.py : q.java }
 
+function _lsKey(qid, lang) { return `l5_prod_${qid}_${lang}` }
+
 function _currentCode(q) {
   const key = `${q.id}:${_lang}`
-  return _code[key] !== undefined ? _code[key] : _skeleton(q)
+  if (_code[key] !== undefined) return _code[key]
+  const saved = localStorage.getItem(_lsKey(q.id, _lang))
+  if (saved !== null) return saved
+  return _skeleton(q)
 }
 
 function _saveCurrentCode() {
   if (!_currentQ) return
-  const ta = document.getElementById('prodCode')
-  if (ta) _code[`${_currentQ}:${_lang}`] = ta.value
+  const val = getEditorValue('prodMonaco')
+  _code[`${_currentQ}:${_lang}`] = val
+  localStorage.setItem(_lsKey(_currentQ, _lang), val)
 }
 
 // ── Renders ───────────────────────────────────────────────────────────────────
@@ -1176,15 +1206,27 @@ function _renderQuestion() {
         <div class="ood-pane-code" id="oodPaneCode">
           <div class="ood-code-hd">
             <span class="ood-code-file">${q.id}.${ext}</span>
-            <span class="ood-code-hint">Tab = 4 spaces &nbsp;·&nbsp; Ctrl+Enter = Analyze</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="ood-code-hint">Ctrl+Enter = Analyze &nbsp;·&nbsp; Shift+Enter = Run</span>
+              <button class="btn-run" id="prodRunBtn" onclick="prodCodeRun()">▶ ${t('运行', 'Run')}</button>
+            </div>
           </div>
-          <textarea class="ood-textarea" id="prodCode"
-            spellcheck="false" autocorrect="off" autocomplete="off"
-            oninput="prodCodeInput()"
-            placeholder="${t('在此编写生产级代码实现…', 'Write your production code implementation here…')}">${esc(code)}</textarea>
+          <div id="prodMonaco" class="monaco-container"></div>
+          <div id="prodOutput" class="code-output" style="display:none">
+            <div class="code-output-hd">
+              <span id="prodOutputLabel">● Output</span>
+              <button class="code-output-close" onclick="document.getElementById('prodOutput').style.display='none'">✕</button>
+            </div>
+            <pre id="prodOutputPre" class="code-output-pre"></pre>
+          </div>
         </div>
         <div class="ood-divider" id="oodDivider"></div>
         <div class="ood-pane-side" id="oodPaneSide">
+          ${q.background ? `
+          <div class="ood-scenarios-box">
+            <div class="ood-scenarios-hd">📝 ${t('题目背景', 'Problem')}</div>
+            <p class="prod-bg-text">${esc(q.background)}</p>
+          </div>` : ''}
           <div class="ood-scenarios-box">
             <div class="ood-scenarios-hd">📋 ${t('测试场景', 'Test Scenarios')}</div>
             <ol class="ood-scenario-list">
@@ -1205,20 +1247,20 @@ function _renderQuestion() {
 
   initPaneDrag()
 
-  const ta = document.getElementById('prodCode')
-  if (ta) {
-    ta.addEventListener('keydown', e => {
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        const s = ta.selectionStart, end = ta.selectionEnd
-        ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(end)
-        ta.selectionStart = ta.selectionEnd = s + 4
-        prodCodeInput()
-      } else if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault()
-        window.prodCodeAnalyze()
-      }
+  const editor = createEditor('prodMonaco', code, _lang)
+  if (editor) {
+    // Auto-save to localStorage on every change — survives sidebar navigation
+    editor.onDidChangeModelContent(() => {
+      const val = editor.getValue()
+      _code[`${_currentQ}:${_lang}`] = val
+      localStorage.setItem(_lsKey(_currentQ, _lang), val)
     })
+    addEditorAction('prodMonaco', 'prod-analyze', 'Analyze Implementation',
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+      () => window.prodCodeAnalyze())
+    addEditorAction('prodMonaco', 'prod-run', 'Run Code',
+      monaco.KeyMod.Shift | monaco.KeyCode.Enter,
+      () => window.prodCodeRun())
   }
 }
 
@@ -1226,19 +1268,20 @@ function _renderQuestion() {
 
 export function prodCodeBackToList() {
   _saveCurrentCode()
+  disposeEditor('prodMonaco')
   renderProdCode()
 }
 
 export function prodCodeSwitchLang(lang) {
   _saveCurrentCode()
   _lang = lang
+  disposeEditor('prodMonaco')
   _renderQuestion()
 }
 
 export function prodCodeInput() {
+  // kept for compatibility — Monaco auto-saves via getEditorValue
   if (!_currentQ) return
-  const ta = document.getElementById('prodCode')
-  if (ta) _code[`${_currentQ}:${_lang}`] = ta.value
 }
 
 export async function prodCodeAnalyze() {
@@ -1246,8 +1289,7 @@ export async function prodCodeAnalyze() {
   const q = _getQ(_currentQ)
   if (!q) return
 
-  const ta   = document.getElementById('prodCode')
-  const code = ta?.value?.trim()
+  const code = getEditorValue('prodMonaco').trim()
   if (!code) { alert(t('请先写一些代码再分析', 'Write some code before analyzing')); return }
 
   _streaming = true
@@ -1316,5 +1358,30 @@ Reference specific class/method names from the code in your feedback.`
     _streaming = false
     const btn = document.getElementById('prodCodeAnalyzeBtn')
     if (btn) { btn.disabled = false; btn.textContent = `🔍 ${t('重新分析', 'Re-analyze')}` }
+  }
+}
+
+export async function prodCodeRun() {
+  const code = getEditorValue('prodMonaco').trim()
+  if (!code) return
+  const btn = document.getElementById('prodRunBtn')
+  const out  = document.getElementById('prodOutput')
+  const pre  = document.getElementById('prodOutputPre')
+  const lbl  = document.getElementById('prodOutputLabel')
+  if (btn) { btn.disabled = true; btn.textContent = `⟳ ${t('运行中…', 'Running…')}` }
+  if (out) out.style.display = 'flex'
+  if (pre) pre.textContent = t('运行中…', 'Running…')
+  try {
+    const result = await runCode(code, _lang)
+    if (pre) pre.textContent = result.output || t('(无输出)', '(no output)')
+    if (lbl) {
+      lbl.textContent = result.ok ? '✓ Output' : '✕ Output'
+      lbl.style.color = result.ok ? 'var(--green)' : 'var(--red)'
+    }
+  } catch (err) {
+    if (pre) pre.textContent = err?.message || String(err) || 'unknown error'
+    if (lbl) { lbl.textContent = '✕ Error'; lbl.style.color = 'var(--red)' }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = `▶ ${t('运行', 'Run')}` }
   }
 }

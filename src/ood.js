@@ -4,6 +4,8 @@ import { t } from './i18n.js'
 import { esc, md2h, showErr } from './util.js'
 import { claude, claudeStream } from './api.js'
 import { initPaneDrag } from './panedrag.js'
+import { createEditor, getEditorValue, setEditorValue, setEditorLanguage, disposeEditor, addEditorAction, monaco } from './codeeditor.js'
+import { runCode } from './coderunner.js'
 
 // ── Module state ──────────────────────────────────────────────────────────────
 let _currentQ = null   // question id | null = list view
@@ -1288,6 +1290,116 @@ class ChessGame {
     boolean isCheckmate(Color color)        { /* TODO */ return false; }
 }`,
   },
+
+  {
+    id: 'in_memory_cache',
+    icon: '🗄️',
+    title: 'In-Memory Cache System',
+    difficulty: 'medium',
+    desc: '设计一个进程内内存缓存系统，支持 get/put API、LRU 淘汰和 TTL 过期（懒惰清理），保持代码整洁，不考虑分布式场景。',
+    scenarios: [
+      'Cache 容量为 3，插入 A、B、C 后 get(A)，再插入 D — B（最久未访问）被 LRU 淘汰',
+      '插入带 TTL=2s 的条目，2 秒后 get — 返回 null，条目从 map+dll 中清除',
+      '更新已存在的 key — 仅更新 value/expireAt 并移到链表头，不新增节点',
+      '多线程并发 get/put — 不出现数据竞争或状态不一致',
+      'put 时容量已满且 tail 节点已过期 — 先淘汰 tail，再插入新节点',
+    ],
+    py: `import time
+import threading
+from typing import Any, Optional
+
+
+class InMemoryCache:
+
+    class _Node:
+        def __init__(self, key, value, expire_at: float):
+            self.key       = key
+            self.value     = value
+            self.expire_at = expire_at  # absolute time: time.time() + ttl_ms/1000
+            self.prev: 'InMemoryCache._Node | None' = None
+            self.next: 'InMemoryCache._Node | None' = None
+
+    class _DLL:
+        """Doubly-linked list: head = MRU, tail = LRU."""
+        def __init__(self):
+            self.head = None  # most recently used
+            self.tail = None  # least recently used (eviction victim)
+
+        def add_to_head(self, node) -> None:
+            pass  # TODO: prepend node; update head (and tail if list was empty)
+
+        def move_to_head(self, node) -> None:
+            pass  # TODO: remove node from current position, then add_to_head
+
+        def remove_node(self, node) -> None:
+            pass  # TODO: unlink node; update head/tail pointers as needed
+
+        def get_tail(self):
+            pass  # TODO: return tail node (LRU victim), or None if empty
+
+    def __init__(self, capacity: int):
+        self._capacity = capacity
+        self._map: dict = {}          # key → _Node  (O(1) lookup)
+        self._dll = InMemoryCache._DLL()
+        self._lock = threading.Lock()
+
+    def get(self, key) -> Optional[Any]:
+        # TODO: 1. key missing → return None
+        #       2. node expired → remove from map+dll, return None
+        #       3. move to head (mark recently used), return value
+        pass
+
+    def put(self, key, value, ttl_ms: int) -> None:
+        # TODO: 1. key exists → update value/expire_at, move to head
+        #       2. key missing + at capacity → evict tail (map.pop + dll.remove_node)
+        #       3. create new node, add to map and dll.add_to_head
+        pass`,
+    java: `import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class InMemoryCache<K, V> {
+    private final int capacity;
+    private final Map<K, CacheNode<K, V>> map; // O(1) lookup
+    private final DoubleLinkedList<K, V> dll;  // MRU at head, LRU at tail
+
+    public InMemoryCache(int capacity) {
+        this.capacity = capacity;
+        this.map = new ConcurrentHashMap<>();
+        this.dll = new DoubleLinkedList<>();
+    }
+
+    public synchronized V get(K key) {
+        // TODO: 1. key missing → return null
+        //       2. node expired → map.remove + dll.removeNode, return null
+        //       3. dll.moveToHead (mark recently used), return value
+        return null;
+    }
+
+    public synchronized void put(K key, V value, long ttlMs) {
+        long expireAt = System.currentTimeMillis() + ttlMs;
+        // TODO: 1. key exists → update node.value/expireAt, dll.moveToHead
+        //       2. at capacity → evict dll.getTail() + map.remove(lru.key)
+        //       3. create new CacheNode, map.put + dll.addToHead
+    }
+
+    // ── Inner classes ─────────────────────────────────────────────────────────
+
+    private static class CacheNode<K, V> {
+        K key; V value; long expireAt;
+        CacheNode<K, V> prev, next;
+    }
+
+    private static class DoubleLinkedList<K, V> {
+        private CacheNode<K, V> head; // MRU
+        private CacheNode<K, V> tail; // LRU
+
+        void addToHead(CacheNode<K, V> node)  { /* TODO */ }
+        void moveToHead(CacheNode<K, V> node) { /* TODO: removeNode + addToHead */ }
+        void removeNode(CacheNode<K, V> node) { /* TODO: unlink, update head/tail */ }
+        CacheNode<K, V> getTail()             { /* TODO */ return tail; }
+    }
+}`,
+  },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1298,15 +1410,21 @@ function _skeleton(q) {
   return _lang === 'python' ? q.py : q.java
 }
 
+function _lsKey(qid, lang) { return `l5_ood_${qid}_${lang}` }
+
 function _currentCode(q) {
   const key = `${q.id}:${_lang}`
-  return _code[key] !== undefined ? _code[key] : _skeleton(q)
+  if (_code[key] !== undefined) return _code[key]
+  const saved = localStorage.getItem(_lsKey(q.id, _lang))
+  if (saved !== null) return saved
+  return _skeleton(q)
 }
 
 function _saveCurrentCode() {
   if (!_currentQ) return
-  const ta = document.getElementById('oodCode')
-  if (ta) _code[`${_currentQ}:${_lang}`] = ta.value
+  const val = getEditorValue('oodMonaco')
+  _code[`${_currentQ}:${_lang}`] = val
+  localStorage.setItem(_lsKey(_currentQ, _lang), val)
 }
 
 // ── Renders ───────────────────────────────────────────────────────────────────
@@ -1367,12 +1485,19 @@ function _renderQuestion() {
         <div class="ood-pane-code" id="oodPaneCode">
           <div class="ood-code-hd">
             <span class="ood-code-file">${q.id}.${ext}</span>
-            <span class="ood-code-hint">Tab = 4 spaces &nbsp;·&nbsp; Ctrl+Enter = Analyze</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="ood-code-hint">Ctrl+Enter = Analyze &nbsp;·&nbsp; Shift+Enter = Run</span>
+              <button class="btn-run" id="oodRunBtn" onclick="oodRun()">▶ ${t('运行', 'Run')}</button>
+            </div>
           </div>
-          <textarea class="ood-textarea" id="oodCode"
-            spellcheck="false" autocorrect="off" autocomplete="off"
-            oninput="oodCodeInput()"
-            placeholder="${t('在此编写面向对象设计方案…', 'Write your OOD solution here…')}">${esc(code)}</textarea>
+          <div id="oodMonaco" class="monaco-container"></div>
+          <div id="oodOutput" class="code-output" style="display:none">
+            <div class="code-output-hd">
+              <span id="oodOutputLabel">● Output</span>
+              <button class="code-output-close" onclick="document.getElementById('oodOutput').style.display='none'">✕</button>
+            </div>
+            <pre id="oodOutputPre" class="code-output-pre"></pre>
+          </div>
         </div>
         <div class="ood-divider" id="oodDivider"></div>
         <div class="ood-pane-side" id="oodPaneSide">
@@ -1396,21 +1521,20 @@ function _renderQuestion() {
 
   initPaneDrag()
 
-  // Wire Tab key and Ctrl+Enter imperatively (can't use inline onkeydown for Tab)
-  const ta = document.getElementById('oodCode')
-  if (ta) {
-    ta.addEventListener('keydown', e => {
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        const s = ta.selectionStart, end = ta.selectionEnd
-        ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(end)
-        ta.selectionStart = ta.selectionEnd = s + 4
-        oodCodeInput()
-      } else if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault()
-        window.oodAnalyze()
-      }
+  const editor = createEditor('oodMonaco', code, _lang)
+  if (editor) {
+    // Auto-save to localStorage on every change — survives sidebar navigation
+    editor.onDidChangeModelContent(() => {
+      const val = editor.getValue()
+      _code[`${_currentQ}:${_lang}`] = val
+      localStorage.setItem(_lsKey(_currentQ, _lang), val)
     })
+    addEditorAction('oodMonaco', 'ood-analyze', 'Analyze Design',
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+      () => window.oodAnalyze())
+    addEditorAction('oodMonaco', 'ood-run', 'Run Code',
+      monaco.KeyMod.Shift | monaco.KeyCode.Enter,
+      () => window.oodRun())
   }
 }
 
@@ -1418,19 +1542,19 @@ function _renderQuestion() {
 
 export function oodBackToList() {
   _saveCurrentCode()
+  disposeEditor('oodMonaco')
   renderOod()
 }
 
 export function oodSwitchLang(lang) {
   _saveCurrentCode()
   _lang = lang
+  disposeEditor('oodMonaco')
   _renderQuestion()
 }
 
 export function oodCodeInput() {
-  if (!_currentQ) return
-  const ta = document.getElementById('oodCode')
-  if (ta) _code[`${_currentQ}:${_lang}`] = ta.value
+  // kept for compatibility — Monaco auto-saves via getEditorValue
 }
 
 export async function oodAnalyze() {
@@ -1438,8 +1562,7 @@ export async function oodAnalyze() {
   const q = _getQ(_currentQ)
   if (!q) return
 
-  const ta   = document.getElementById('oodCode')
-  const code = ta?.value?.trim()
+  const code = getEditorValue('oodMonaco').trim()
   if (!code) { alert(t('请先写一些代码再分析', 'Write some code before analyzing')); return }
 
   _streaming = true
@@ -1504,5 +1627,30 @@ Reference specific class/method names from the code in your feedback.`
     _streaming = false
     const btn = document.getElementById('oodAnalyzeBtn')
     if (btn) { btn.disabled = false; btn.textContent = `🔍 ${t('重新分析', 'Re-analyze')}` }
+  }
+}
+
+export async function oodRun() {
+  const code = getEditorValue('oodMonaco').trim()
+  if (!code) return
+  const btn = document.getElementById('oodRunBtn')
+  const out  = document.getElementById('oodOutput')
+  const pre  = document.getElementById('oodOutputPre')
+  const lbl  = document.getElementById('oodOutputLabel')
+  if (btn) { btn.disabled = true; btn.textContent = `⟳ ${t('运行中…', 'Running…')}` }
+  if (out) out.style.display = 'flex'
+  if (pre) pre.textContent = t('运行中…', 'Running…')
+  try {
+    const result = await runCode(code, _lang)
+    if (pre) pre.textContent = result.output || t('(无输出)', '(no output)')
+    if (lbl) {
+      lbl.textContent = result.ok ? '✓ Output' : '✕ Output'
+      lbl.style.color = result.ok ? 'var(--green)' : 'var(--red)'
+    }
+  } catch (err) {
+    if (pre) pre.textContent = err?.message || String(err) || 'unknown error'
+    if (lbl) { lbl.textContent = '✕ Error'; lbl.style.color = 'var(--red)' }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = `▶ ${t('运行', 'Run')}` }
   }
 }

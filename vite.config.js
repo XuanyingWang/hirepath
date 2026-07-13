@@ -1,7 +1,11 @@
 import { defineConfig } from 'vite'
+import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 
 export default defineConfig(({ mode }) => ({
   clearScreen: false,
+  plugins: [
+    monacoEditorPlugin.default({ languageWorkers: ['editorWorkerService'] }),
+  ],
   server: {
     port: 1420,
     strictPort: true,
@@ -18,6 +22,11 @@ export default defineConfig(({ mode }) => ({
         target: 'https://api.voyageai.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/voyage/, ''),
+      },
+      '/api/wandbox': {
+        target: 'https://wandbox.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/wandbox/, ''),
       },
     },
   },

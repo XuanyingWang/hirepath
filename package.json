@@ -7,13 +7,16 @@
     "build": "vite build",
     "build:web": "vite build --mode web",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "eval": "node eval/run.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-deep-link": "^2",
-    "@tauri-apps/plugin-dialog": "^2.6.0"
+    "@tauri-apps/plugin-dialog": "^2.6.0",
+    "monaco-editor": "^0.55.1",
+    "vite-plugin-monaco-editor": "^1.1.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

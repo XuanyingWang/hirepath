@@ -251,6 +251,31 @@ async fn call_claude_stream(
     Ok(())
 }
 
+// ── Wandbox code execution (free, no API key required) ───────────────────────
+
+/// Execute code via Wandbox from the native layer (bypasses WebView CORS).
+#[tauri::command]
+async fn run_code(code: String, language: String) -> Result<String, String> {
+    let compiler = match language.as_str() {
+        "python" => "cpython-3.12.7",
+        "java"   => "openjdk-jdk-22+36",
+        other    => return Err(format!("Unsupported language: {}", other)),
+    };
+    let client = reqwest::Client::new();
+    let body = serde_json::json!({ "compiler": compiler, "code": code });
+    let resp = client
+        .post("https://wandbox.org/api/compile.json")
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.status().is_success() {
+        return Err(format!("Wandbox error: {}", resp.status().as_u16()));
+    }
+    resp.text().await.map_err(|e| e.to_string())
+}
+
 /// Fetch a web page and return its readable plain-text content (≤ 12 000 chars).
 #[tauri::command]
 async fn fetch_url(url: String) -> Result<String, String> {
@@ -1009,6 +1034,7 @@ pub fn run() {
             call_openai,
             call_openai_stream,
             call_openai_vision,
+            run_code,
             fetch_url,
             save_api_key,
             load_api_key,

@@ -1080,6 +1080,24 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:1
 .sd-textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.7;resize:vertical;min-height:88px;outline:none;transition:border-color .15s}
 .sd-textarea:focus{border-color:var(--accent)}
 .sd-textarea::placeholder{opacity:.75}
+/* ── Monaco Editor ── */
+.monaco-container{flex:1 1 0;min-height:0;border:1px solid var(--border);border-radius:0 0 8px 8px;overflow:hidden}
+
+/* The app's generic `.main` class sets flex-direction:column, which bleeds into
+   Monaco's suggest widget and collapses the icon+label row into a vertical
+   stack — pushing the label text below the visible row area. Reset here. */
+.monaco-editor .suggest-widget .monaco-list-row > .contents > .main{flex-direction:row !important;flex:none !important}
+
+.btn-run{padding:3px 12px;border-radius:6px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:12px;font-family:var(--font);font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-run:hover{background:var(--green);color:#fff}
+.btn-run:disabled{opacity:.5;cursor:not-allowed}
+/* ── Code Output Panel ── */
+.code-output{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:200px;margin-top:8px}
+.code-output-hd{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;font-weight:600;flex-shrink:0}
+.code-output-close{background:none;border:none;cursor:pointer;color:var(--muted2);font-size:13px;padding:0 2px;line-height:1}
+.code-output-close:hover{color:var(--text)}
+.code-output-pre{flex:1;overflow-y:auto;margin:0;padding:10px 14px;font-family:'Fira Code',Consolas,monospace;font-size:12.5px;line-height:1.6;color:var(--text2);background:var(--bg);white-space:pre-wrap;word-break:break-all}
 .sd-textarea::placeholder{color:var(--muted2);opacity:.45}
 .sd-topics{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
 .sd-topic-chip{font-size:11px;padding:2px 8px;border-radius:12px;background:var(--surface3,var(--surface2));border:1px solid var(--border2);color:var(--text2)}
+.prod-bg-text{font-size:12.5px;line-height:1.7;color:var(--text2);margin:6px 0 0}
