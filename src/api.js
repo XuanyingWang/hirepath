@@ -270,7 +270,7 @@ export async function saveApiKey() {
   const claudeKey = inputEl?.value?.trim() || ''
   const geminiKey = document.getElementById('sk_gemini')?.value?.trim() || ''
   const openaiKey = document.getElementById('sk_openai')?.value?.trim() || ''
-  const voyageKey = document.getElementById('sk_voyage')?.value?.trim() || ''
+  const voyageKey    = document.getElementById('sk_voyage')?.value?.trim()    || ''
   // No strict format check — accept any non-empty key
 
   try {
@@ -615,6 +615,47 @@ export async function claudeQuiz(system, userMsg) {
 
 // ── Streaming call (provider-aware) ──────────────────────────────────────────
 // `onChunk(accumulated)` is called with the full text so far on every token.
+
+/**
+ * Multi-turn tool-use loop with Claude.
+ * executeTool(name, input) → string  — your code runs the tool, returns a result string
+ * onStatus(name, input)             — called right before each tool execution (for UI updates)
+ * Falls back to a plain claude() call for non-Claude providers.
+ */
+export async function claudeWithTools(system, userMsg, tools, executeTool, { onStatus, maxTokens = 1800 } = {}) {
+  _requireKey()
+  if (state.provider !== 'claude') return claude(system, userMsg, maxTokens)
+
+  const messages = [{ role: 'user', content: userMsg }]
+
+  for (let round = 0; round < 5; round++) {
+    const resp = await fetch(`${_ANTHROPIC_BASE}/v1/messages`, {
+      method: 'POST',
+      headers: _ANTHROPIC_HEADERS(),
+      body: JSON.stringify({ model: _cm('smart'), max_tokens: maxTokens, system, messages, tools }),
+    })
+    if (!resp.ok) throw new Error(`Anthropic API ${resp.status}: ${await resp.text()}`)
+    const data = await resp.json()
+
+    messages.push({ role: 'assistant', content: data.content })
+
+    if (data.stop_reason !== 'tool_use') {
+      return data.content.filter(b => b.type === 'text').map(b => b.text).join('')
+    }
+
+    // Execute every tool call Claude requested, collect results
+    const toolResults = []
+    for (const block of data.content) {
+      if (block.type !== 'tool_use') continue
+      if (onStatus) onStatus(block.name, block.input)
+      const result = await executeTool(block.name, block.input)
+      toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: String(result) })
+    }
+    messages.push({ role: 'user', content: toolResults })
+  }
+
+  throw new Error('Tool use loop exceeded 5 rounds')
+}
 
 export function claudeStream(system, userMsg, maxTokens = 1800, onChunk, tier = 'smart') {
   _requireKey()

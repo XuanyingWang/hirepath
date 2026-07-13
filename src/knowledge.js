@@ -3,7 +3,7 @@ import { state, gch, save, uid } from './state.js'
 import { t } from './i18n.js'
 import { esc, md2h, showLoading, showErr } from './util.js'
 import { buildAnalysis } from './analysis.js'
-import { claudeStream } from './api.js'
+import { claudeStream, claudeWithTools } from './api.js'
 import { getBh } from './behavioral/shared.js'
 import { indexChapter, retrieveContext } from './rag.js'
 
@@ -13,6 +13,43 @@ let _qaActiveCid = null      // which chapter the panel belongs to (reset on cha
 let _notesEditing = false    // notes section in edit mode?
 let _refineOpen = false      // refine panel visible?
 let _refining = false        // refine AI call in progress?
+
+// ── Tool use: search other chapters ───────────────────────────────────────────
+
+const _QA_TOOLS = [{
+  name: 'search_related_chapters',
+  description: "Search the user's other saved study chapters for content relevant to the question. Use this when the question references a concept that might be covered in another chapter (e.g. asking about Raft while studying Kafka).",
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: { type: 'string', description: 'Keywords or phrase to search for in the chapter titles and content' },
+    },
+    required: ['query'],
+  },
+}]
+
+function _executeQaTool(name, input, currentCid) {
+  if (name !== 'search_related_chapters') return 'Unknown tool.'
+  const keywords = (input.query || '').toLowerCase().split(/\s+/).filter(w => w.length > 2)
+  if (!keywords.length) return 'No keywords provided.'
+
+  const hits = state.S.chapters
+    .filter(c => c.id !== currentCid && (c.analysis || c.rawContent))
+    .map(c => {
+      const text = (c.analysis || c.rawContent || '').toLowerCase()
+      const titleHit = keywords.some(k => c.name.toLowerCase().includes(k)) ? 3 : 0
+      const bodyHits = keywords.filter(k => text.includes(k)).length
+      return { c, score: titleHit + bodyHits }
+    })
+    .filter(r => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 2)
+
+  if (!hits.length) return "No related chapters found in the user's knowledge base."
+  return hits.map(r =>
+    `## Chapter: ${r.c.name}\n${(r.c.analysis || r.c.rawContent || '').slice(0, 1200)}`
+  ).join('\n\n---\n\n')
+}
 
 const _CH_QA_PRESETS = [
   { key: 'relevance',  label: () => t('我的经历相关性？',  'My experience relevance?') },
@@ -296,7 +333,9 @@ async function _doChQuestion(cid, q) {
 
   const ragCtx = await retrieveContext(q)
 
-  const sys = `You are an SDE II interview coach. The candidate will ask you a question. Synthesize their overall experience holistically and answer directly in 3-5 concise bullet points. Never iterate through individual bullets or repeat context.
+  const sys = `You are an SDE II interview coach. The candidate will ask you a question.
+If the question touches a concept covered in another chapter the user has studied, use search_related_chapters to retrieve that content first.
+Then synthesize the user's experience holistically and answer directly in 3-5 concise bullet points.
 
 Candidate's overall experience:
 ${profileCtx}
@@ -308,7 +347,6 @@ ${topicCtx}${ragCtx ? `\n\nRelevant notes retrieved from knowledge base:\n${ragC
     ? `Conversation so far:\n${convHistory}\n\nFollow-up question: ${q}`
     : q
 
-  // Show streaming answer in panel
   const answersEl = document.getElementById(`ch-qa-answers-${cid}`)
   if (!answersEl) return
   const streamId = `ch-qa-stream-${uid()}`
@@ -319,20 +357,36 @@ ${topicCtx}${ragCtx ? `\n\nRelevant notes retrieved from knowledge base:\n${ragC
     </div>`)
   answersEl.scrollTop = answersEl.scrollHeight
 
-  let full = ''
   const aEl = document.getElementById(`${streamId}-a`)
+  let full = ''
+
   try {
-    await claudeStream(sys, userMsg, 600, chunk => {
-      full = chunk   // claudeStream passes cumulative text, not deltas
-      if (aEl) aEl.textContent = full
-    })
-    if (aEl) { aEl.innerHTML = md2h(full); aEl.classList.remove('tp-qa-streaming') }
+    if (state.provider === 'claude') {
+      if (aEl) aEl.textContent = t('🤔 思考中…', '🤔 Thinking…')
+      full = await claudeWithTools(sys, userMsg, _QA_TOOLS,
+        (name, input) => _executeQaTool(name, input, cid),
+        {
+          onStatus: (name, input) => {
+            if (!aEl) return
+            if (name === 'search_related_chapters')
+              aEl.textContent = t(`🔍 搜索章节：「${input.query}」`, `🔍 Searching chapters: "${input.query}"`)
+          },
+          maxTokens: 1000,
+        }
+      )
+      if (aEl) { aEl.innerHTML = md2h(full); aEl.classList.remove('tp-qa-streaming') }
+    } else {
+      await claudeStream(sys, userMsg, 800, chunk => {
+        full = chunk
+        if (aEl) aEl.textContent = full
+      })
+      if (aEl) { aEl.innerHTML = md2h(full); aEl.classList.remove('tp-qa-streaming') }
+    }
   } catch (err) {
     if (aEl) aEl.textContent = `[Error: ${err?.message || err}]`
     return
   }
 
-  // Persist to qaHistory
   if (!c.qaHistory) c.qaHistory = []
   c.qaHistory.push({ q, a: full, ts: new Date().toISOString() })
   save()
