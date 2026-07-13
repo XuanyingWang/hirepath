@@ -269,7 +269,13 @@ export async function submitResume() {
   const bh = getBh()
   let bullets = []
   try {
-    const sys = `Extract experience bullet points from this resume, grouped by role/company/project. Return ONLY a valid JSON array: [{"role":"Senior SWE at Company (2021-2024)","bullets":["bullet 1","bullet 2"]}]. Include all experience bullets; skip education and skills sections.`
+    const sys = `Extract work experience bullet points from this resume, grouped by role/company/project. Return ONLY a valid JSON array: [{"role":"Senior SWE at Company (2021-2024)","bullets":["bullet 1","bullet 2"]}].
+
+Rules:
+- Include ONLY action-verb-led bullets from work/internship experience sections (e.g. "Designed...", "Built...", "Led...")
+- Each bullet must be a single complete thought describing one accomplishment or responsibility
+- If a bullet was wrapped across multiple lines in the source text, join it into one string
+- Do NOT include: contact info, summary/objective paragraphs, skills/technologies lists, education, certifications, section headers, or any line that is not a job accomplishment bullet`
     const raw = await claudeJSON(sys, `Resume:\n\n${text}`, 3000, '[')
     JSON.parse(raw).forEach(g => {
       ;(g.bullets || []).forEach(txt => {
@@ -278,8 +284,8 @@ export async function submitResume() {
     })
   } catch (_) {
     bullets = text.split('\n').map(l => l.trim())
-      .filter(l => /^[•\-*▸]/.test(l) || l.length > 40).slice(0, 40)
-      .map(l => ({ id: uid(), text: l.replace(/^[•\-*▸]\s*/, ''), role: 'Experience', hmQuestions: [], questionsGenerated: false }))
+      .filter(l => /^[•\-*▸–—]/.test(l) && l.length > 15 && l.length < 300).slice(0, 40)
+      .map(l => ({ id: uid(), text: l.replace(/^[•\-*▸–—]\s*/, ''), role: 'Experience', hmQuestions: [], questionsGenerated: false }))
   }
   const resume = { id: uid(), name, text, bullets, createdAt: new Date().toISOString() }
   bh.resumes.unshift(resume)
